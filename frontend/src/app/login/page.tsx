@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 import { PageContainer } from "@/components/PageContainer";
 
 export default function LoginPage() {
@@ -12,15 +13,9 @@ export default function LoginPage() {
             Sign in to HireMind
           </h1>
           <p className="mt-3 text-sm leading-6 text-neutral-600">
-            Authentication will be connected in a later phase. This button is a
-            placeholder for Google login.
+            Use your Google account to access your interview dashboard.
           </p>
-          <button
-            type="button"
-            className="mt-6 flex w-full items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
-          >
-            Continue with Google
-          </button>
+          <GoogleLoginButton />
           <Link
             href="/"
             className="mt-5 inline-flex text-sm font-medium text-neutral-600 hover:text-neutral-950"

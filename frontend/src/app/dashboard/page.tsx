@@ -1,5 +1,11 @@
+import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
+import { LogoutButton } from "@/components/LogoutButton";
 import { Sidebar } from "@/components/Sidebar";
+import { getCurrentUser } from "@/lib/auth";
+import { getBackendHealth } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 
 const stats = [
   { label: "Resume Status", value: "Not uploaded" },
@@ -7,7 +13,14 @@ const stats = [
   { label: "Average Score", value: "N/A" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const backendHealth = await getBackendHealth();
+
   return (
     <div className="min-h-screen bg-neutral-50 md:flex">
       <Sidebar />
@@ -15,12 +28,20 @@ export default function DashboardPage() {
         <section className="rounded-lg border border-neutral-200 bg-white p-6">
           <p className="text-sm font-medium text-neutral-500">Dashboard</p>
           <h1 className="mt-2 text-3xl font-semibold text-neutral-950">
-            Welcome to HireMind
+            Welcome, {user.name}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
             Track interview readiness, review candidate sessions, and monitor
             hiring signals as the platform grows.
           </p>
+          <div className="mt-5 inline-flex rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800">
+            {backendHealth.connected
+              ? "Backend connected"
+              : "Backend unavailable"}
+          </div>
+          <div className="mt-5">
+            <LogoutButton />
+          </div>
         </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
