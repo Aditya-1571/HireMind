@@ -1,5 +1,8 @@
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
+import { getBackendHealth } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 
 const stats = [
   { label: "Resume Status", value: "Not uploaded" },
@@ -7,7 +10,9 @@ const stats = [
   { label: "Average Score", value: "N/A" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const backendHealth = await getBackendHealth();
+
   return (
     <div className="min-h-screen bg-neutral-50 md:flex">
       <Sidebar />
@@ -21,6 +26,11 @@ export default function DashboardPage() {
             Track interview readiness, review candidate sessions, and monitor
             hiring signals as the platform grows.
           </p>
+          <div className="mt-5 inline-flex rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800">
+            {backendHealth.connected
+              ? "Backend connected"
+              : "Backend unavailable"}
+          </div>
         </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
