@@ -8,5 +8,5 @@ google-auth
 PyJWT
 requests
 python-multipart
-pypdf
+PyMuPDF
 python-docx

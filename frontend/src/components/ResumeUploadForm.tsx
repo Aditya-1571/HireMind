@@ -44,6 +44,7 @@ export function ResumeUploadForm() {
             ? error.message
             : "Resume upload failed.",
         );
+        router.refresh();
         return;
       }
 

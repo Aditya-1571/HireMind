@@ -5,6 +5,25 @@ import { Sidebar } from "@/components/Sidebar";
 import { getResumes } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
+const statusLabels: Record<string, string> = {
+  uploaded: "Uploaded",
+  processing: "Processing",
+  ready: "Ready",
+  failed: "Failed",
+};
+
+function getResumeStatusLabel(status?: string) {
+  if (!status) {
+    return "Not uploaded";
+  }
+
+  return statusLabels[status] ?? "Uploaded";
+}
+
+function getPreview(text: string) {
+  return text.length > 280 ? `${text.slice(0, 280).trim()}...` : text;
+}
+
 export default async function DashboardPage() {
   const [user, token] = await Promise.all([getCurrentUser(), getSessionToken()]);
 
@@ -15,7 +34,10 @@ export default async function DashboardPage() {
   const resumes = await getResumes(token);
   const latestResume = resumes[0];
   const stats = [
-    { label: "Resume Status", value: latestResume ? "Uploaded" : "Not uploaded" },
+    {
+      label: "Resume Status",
+      value: getResumeStatusLabel(latestResume?.processing_status),
+    },
     { label: "Total Interviews", value: "0" },
     { label: "Average Score", value: "N/A" },
   ];
@@ -63,8 +85,8 @@ export default async function DashboardPage() {
               </p>
             </div>
             {latestResume ? (
-              <span className="rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
-                Ready
+              <span className="rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700">
+                {getResumeStatusLabel(latestResume.processing_status)}
               </span>
             ) : null}
           </div>
@@ -78,10 +100,24 @@ export default async function DashboardPage() {
                 {latestResume.original_filename}
               </p>
               <p className="mt-2 text-sm text-neutral-500">
-                {latestResume.extracted_text
-                  ? "Text extracted and ready for interview workflows."
-                  : "Uploaded. Text extraction was not available for this file."}
+                Status: {getResumeStatusLabel(latestResume.processing_status)}
               </p>
+              {latestResume.processing_status === "ready" &&
+              latestResume.extracted_text ? (
+                <p className="mt-3 text-sm leading-6 text-neutral-600">
+                  {getPreview(latestResume.extracted_text)}
+                </p>
+              ) : null}
+              {latestResume.processing_status === "failed" ? (
+                <p className="mt-3 text-sm text-red-600">
+                  No readable resume text could be extracted.
+                </p>
+              ) : null}
+              {latestResume.processing_status === "processing" ? (
+                <p className="mt-3 text-sm text-neutral-600">
+                  Resume text extraction is in progress.
+                </p>
+              ) : null}
             </div>
           ) : null}
         </section>
