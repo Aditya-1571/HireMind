@@ -38,3 +38,5 @@ __pycache__/
 # Application-generated files
 backend/uploads/
 backend/chroma_db/
+
+frontend-src-backup/
