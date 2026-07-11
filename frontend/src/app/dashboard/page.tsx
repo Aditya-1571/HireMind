@@ -1,13 +1,25 @@
+import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
+import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
+import { getResumes } from "@/lib/api";
+import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
-const stats = [
-  { label: "Resume Status", value: "Not uploaded" },
-  { label: "Total Interviews", value: "0" },
-  { label: "Average Score", value: "N/A" },
-];
+export default async function DashboardPage() {
+  const [user, token] = await Promise.all([getCurrentUser(), getSessionToken()]);
 
-export default function DashboardPage() {
+  if (!user || !token) {
+    redirect("/login");
+  }
+
+  const resumes = await getResumes(token);
+  const latestResume = resumes[0];
+  const stats = [
+    { label: "Resume Status", value: latestResume ? "Uploaded" : "Not uploaded" },
+    { label: "Total Interviews", value: "0" },
+    { label: "Average Score", value: "N/A" },
+  ];
+
   return (
     <div className="min-h-screen bg-neutral-50 md:flex">
       <Sidebar />
@@ -15,7 +27,7 @@ export default function DashboardPage() {
         <section className="rounded-lg border border-neutral-200 bg-white p-6">
           <p className="text-sm font-medium text-neutral-500">Dashboard</p>
           <h1 className="mt-2 text-3xl font-semibold text-neutral-950">
-            Welcome to HireMind
+            {user ? `Welcome, ${user.name}` : "Welcome to HireMind"}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
             Track interview readiness, review candidate sessions, and monitor
@@ -37,6 +49,41 @@ export default function DashboardPage() {
               </p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-950">
+                Resume Upload
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                Upload a resume so HireMind can tailor interview prep and
+                evaluation to the candidate profile.
+              </p>
+            </div>
+            {latestResume ? (
+              <span className="rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                Ready
+              </span>
+            ) : null}
+          </div>
+          <ResumeUploadForm />
+          {latestResume ? (
+            <div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm font-medium text-neutral-700">
+                Latest resume
+              </p>
+              <p className="mt-1 break-words text-sm text-neutral-950">
+                {latestResume.original_filename}
+              </p>
+              <p className="mt-2 text-sm text-neutral-500">
+                {latestResume.extracted_text
+                  ? "Text extracted and ready for interview workflows."
+                  : "Uploaded. Text extraction was not available for this file."}
+              </p>
+            </div>
+          ) : null}
         </section>
 
         <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
