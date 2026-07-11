@@ -10,6 +10,14 @@ from starlette.datastructures import UploadFile
 from app.api.auth import get_current_user
 from app.database import get_db
 from app.models import Resume, User
+from app.services.resume_parser_service import (
+    SAFE_PARSE_ERROR,
+    ResumeParsingError,
+    mark_resume_failed,
+    mark_resume_processing,
+    mark_resume_ready,
+    parse_resume_content,
+)
 
 MAX_RESUME_BYTES = 5 * 1024 * 1024
 SUPPORTED_CONTENT_TYPES = {
@@ -24,46 +32,13 @@ class ResumeResponse(BaseModel):
     original_filename: str
     file_type: str
     extracted_text: str | None
+    processing_status: str
 
     model_config = {"from_attributes": True}
 
 
 class ResumeListResponse(BaseModel):
     resumes: list[ResumeResponse]
-
-
-def _extract_text(file: UploadFile, content: bytes) -> str | None:
-    if file.content_type == "text/plain":
-        return content.decode("utf-8", errors="ignore").strip() or None
-
-    if file.content_type == "application/pdf":
-        try:
-            from io import BytesIO
-
-            from pypdf import PdfReader
-
-            reader = PdfReader(BytesIO(content))
-            text = "\n".join(page.extract_text() or "" for page in reader.pages)
-            return text.strip() or None
-        except Exception:
-            return None
-
-    if (
-        file.content_type
-        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ):
-        try:
-            from io import BytesIO
-
-            from docx import Document
-
-            document = Document(BytesIO(content))
-            text = "\n".join(paragraph.text for paragraph in document.paragraphs)
-            return text.strip() or None
-        except Exception:
-            return None
-
-    return None
 
 
 async def upload_resume(
@@ -97,11 +72,36 @@ async def upload_resume(
         user_id=current_user.id,
         original_filename=file.filename or "resume",
         file_type=file.content_type,
-        extracted_text=_extract_text(file, content),
+        processing_status="uploaded",
     )
     db.add(resume)
     db.commit()
     db.refresh(resume)
+
+    try:
+        mark_resume_processing(resume)
+        db.commit()
+
+        parsed_resume = parse_resume_content(content, file.content_type)
+        mark_resume_ready(resume, parsed_resume)
+        db.commit()
+        db.refresh(resume)
+    except ResumeParsingError as exc:
+        mark_resume_failed(resume)
+        db.commit()
+        db.refresh(resume)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        mark_resume_failed(resume)
+        db.commit()
+        db.refresh(resume)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=SAFE_PARSE_ERROR,
+        ) from exc
 
     return ResumeResponse.model_validate(resume)
 

@@ -19,6 +19,7 @@ export type Resume = {
   original_filename: string;
   file_type: string;
   extracted_text: string | null;
+  processing_status: "uploaded" | "processing" | "ready" | "failed" | string;
 };
 
 export type ResumeListResponse = {
