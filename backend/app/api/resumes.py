@@ -33,6 +33,8 @@ class ResumeResponse(BaseModel):
     file_type: str
     extracted_text: str | None
     processing_status: str
+    analysis_status: str
+    analysis_data: dict | None
 
     model_config = {"from_attributes": True}
 
@@ -73,6 +75,7 @@ async def upload_resume(
         original_filename=file.filename or "resume",
         file_type=file.content_type,
         processing_status="uploaded",
+        analysis_status="pending",
     )
     db.add(resume)
     db.commit()

@@ -11,6 +11,7 @@ from app.api.interviews import (
     submit_answer_endpoint,
 )
 from app.api.resumes import list_resumes, upload_resume
+from app.api.resume_analysis import analyze_resume_endpoint
 from app.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -29,6 +30,11 @@ app.add_api_route("/api/auth/google", login_with_google, methods=["POST"])
 app.add_api_route("/api/auth/me", read_current_user, methods=["GET"])
 app.add_api_route("/api/resumes", list_resumes, methods=["GET"])
 app.add_api_route("/api/resumes", upload_resume, methods=["POST"])
+app.add_api_route(
+    "/api/resumes/{resume_id}/analysis",
+    analyze_resume_endpoint,
+    methods=["POST"],
+)
 app.add_api_route("/api/interviews", list_interviews_endpoint, methods=["GET"])
 app.add_api_route("/api/interviews", create_interview_endpoint, methods=["POST"])
 app.add_api_route(

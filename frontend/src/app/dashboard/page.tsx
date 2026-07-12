@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
+import { ResumeAnalysisPanel } from "@/components/ResumeAnalysisPanel";
 import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
 import { getInterviews, getResumes } from "@/lib/api";
@@ -131,6 +132,9 @@ export default async function DashboardPage() {
                 <p className="mt-3 text-sm text-neutral-600">
                   Resume text extraction is in progress.
                 </p>
+              ) : null}
+              {latestResume.processing_status === "ready" ? (
+                <ResumeAnalysisPanel resume={latestResume} />
               ) : null}
             </div>
           ) : null}

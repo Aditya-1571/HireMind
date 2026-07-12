@@ -20,6 +20,28 @@ export type Resume = {
   file_type: string;
   extracted_text: string | null;
   processing_status: "uploaded" | "processing" | "ready" | "failed" | string;
+  analysis_status: "pending" | "analyzing" | "ready" | "failed" | string;
+  analysis_data: ResumeAnalysis | null;
+};
+
+export type ResumeAnalysis = {
+  metadata?: {
+    analysis_version?: string;
+    generated_at?: string;
+    parser_type?: string;
+  };
+  candidate_name: string | null;
+  email: string | null;
+  phone: string | null;
+  summary: string | null;
+  skills: string[];
+  programming_languages: string[];
+  frameworks_and_libraries: string[];
+  tools_and_platforms: string[];
+  education: string[];
+  experience: string[];
+  projects: string[];
+  certifications: string[];
 };
 
 export type ResumeListResponse = {
