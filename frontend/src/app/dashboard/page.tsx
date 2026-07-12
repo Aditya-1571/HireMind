@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
 import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
-import { getResumes } from "@/lib/api";
+import { getInterviews, getResumes } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
 const statusLabels: Record<string, string> = {
@@ -24,6 +24,17 @@ function getPreview(text: string) {
   return text.length > 280 ? `${text.slice(0, 280).trim()}...` : text;
 }
 
+function formatDate(value: string | null) {
+  if (!value) {
+    return "In progress";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 export default async function DashboardPage() {
   const [user, token] = await Promise.all([getCurrentUser(), getSessionToken()]);
 
@@ -31,14 +42,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const resumes = await getResumes(token);
+  const [resumes, interviews] = await Promise.all([
+    getResumes(token),
+    getInterviews(token),
+  ]);
   const latestResume = resumes[0];
   const stats = [
     {
       label: "Resume Status",
       value: getResumeStatusLabel(latestResume?.processing_status),
     },
-    { label: "Total Interviews", value: "0" },
+    { label: "Total Interviews", value: String(interviews.length) },
     { label: "Average Score", value: "N/A" },
   ];
 
@@ -126,15 +140,41 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-neutral-950">
             Recent Interviews
           </h2>
-          <div className="mt-6 rounded-md border border-dashed border-neutral-300 p-8 text-center">
-            <p className="text-sm font-medium text-neutral-700">
-              No interviews yet
-            </p>
-            <p className="mt-2 text-sm text-neutral-500">
-              Recent interview activity will appear here once interviews are
-              created.
-            </p>
-          </div>
+          {interviews.length > 0 ? (
+            <div className="mt-5 divide-y divide-neutral-200">
+              {interviews.slice(0, 5).map((interview) => (
+                <div
+                  key={interview.id}
+                  className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-neutral-950">
+                      {interview.interview_type} - {interview.difficulty}
+                    </p>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      {interview.answered_count} of {interview.total_questions}{" "}
+                      answered
+                    </p>
+                  </div>
+                  <div className="text-sm text-neutral-500">
+                    {interview.status === "completed"
+                      ? formatDate(interview.completed_at)
+                      : "In progress"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-md border border-dashed border-neutral-300 p-8 text-center">
+              <p className="text-sm font-medium text-neutral-700">
+                No interviews yet
+              </p>
+              <p className="mt-2 text-sm text-neutral-500">
+                Recent interview activity will appear here once interviews are
+                created.
+              </p>
+            </div>
+          )}
         </section>
       </PageContainer>
     </div>

@@ -26,6 +26,29 @@ export type ResumeListResponse = {
   resumes: Resume[];
 };
 
+export type InterviewQuestion = {
+  id: string;
+  question_text: string;
+  user_answer: string | null;
+  sequence_number: number;
+};
+
+export type Interview = {
+  id: string;
+  interview_type: string;
+  difficulty: string;
+  status: "in_progress" | "completed" | string;
+  started_at: string | null;
+  completed_at: string | null;
+  answered_count: number;
+  total_questions: number;
+  questions: InterviewQuestion[];
+};
+
+export type InterviewListResponse = {
+  interviews: Interview[];
+};
+
 export async function getBackendHealth(): Promise<BackendHealthStatus> {
   try {
     const response = await fetch(`${apiUrl}/api/health`, {
@@ -75,5 +98,55 @@ export async function getResumes(token?: string): Promise<Resume[]> {
     return Array.isArray(data.resumes) ? data.resumes : [];
   } catch {
     return [];
+  }
+}
+
+export async function getInterviews(token?: string): Promise<Interview[]> {
+  if (!token) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/interviews`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = (await response.json()) as Partial<InterviewListResponse>;
+    return Array.isArray(data.interviews) ? data.interviews : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getInterview(
+  token: string | undefined,
+  interviewId: string,
+): Promise<Interview | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/interviews/${interviewId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as Interview;
+  } catch {
+    return null;
   }
 }
