@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const navigationItems = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/interviews/start", label: "Start Interview" },
   { href: "/", label: "Home" },
 ];
 
