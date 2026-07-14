@@ -37,6 +37,7 @@ class Interview(Base):
     )
     interview_type: Mapped[str] = mapped_column(String(100))
     difficulty: Mapped[str] = mapped_column(String(50))
+    target_role: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(50), default="pending")
     overall_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

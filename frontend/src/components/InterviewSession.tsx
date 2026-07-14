@@ -107,6 +107,9 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
           <h1 className="mt-2 text-2xl font-semibold text-neutral-950">
             {interview.difficulty} difficulty
           </h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            Target role: {interview.target_role}
+          </p>
         </div>
         <p className="rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700">
           Question {progressNumber} of {interview.total_questions}
