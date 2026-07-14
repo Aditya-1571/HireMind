@@ -8,6 +8,19 @@ from sqlalchemy.orm import Session, selectinload
 from app.data.interview_questions import INTERVIEW_QUESTIONS, QUESTION_COUNT
 from app.models import Interview, InterviewQuestion, User
 
+PREDEFINED_TARGET_ROLES = {
+    "Frontend Developer",
+    "Backend Developer",
+    "Full Stack Developer",
+    "Software Engineer",
+    "Data Analyst",
+    "Data Scientist",
+    "Machine Learning Engineer",
+    "DevOps Engineer",
+    "Cloud Engineer",
+}
+CUSTOM_ROLE_OPTION = "Custom Role"
+
 
 def _get_question_set(interview_type: str, difficulty: str) -> list[str]:
     questions = INTERVIEW_QUESTIONS.get(interview_type, {}).get(difficulty)
@@ -17,6 +30,25 @@ def _get_question_set(interview_type: str, difficulty: str) -> list[str]:
             detail="Choose a valid interview type and difficulty",
         )
     return questions[:QUESTION_COUNT]
+
+
+def validate_target_role(target_role: str, custom_role: str | None = None) -> str:
+    if target_role in PREDEFINED_TARGET_ROLES:
+        return target_role
+
+    if target_role == CUSTOM_ROLE_OPTION:
+        cleaned = (custom_role or "").strip()
+        if not 2 <= len(cleaned) <= 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom role must be between 2 and 100 characters",
+            )
+        return cleaned
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Choose a valid target role",
+    )
 
 
 def _answered_count(interview: Interview) -> int:
@@ -49,12 +81,16 @@ def create_interview(
     current_user: User,
     interview_type: str,
     difficulty: str,
+    target_role: str,
+    custom_role: str | None = None,
 ) -> Interview:
     questions = _get_question_set(interview_type, difficulty)
+    final_target_role = validate_target_role(target_role, custom_role)
     interview = Interview(
         user_id=current_user.id,
         interview_type=interview_type,
         difficulty=difficulty,
+        target_role=final_target_role,
         status="in_progress",
         started_at=datetime.now(UTC),
     )

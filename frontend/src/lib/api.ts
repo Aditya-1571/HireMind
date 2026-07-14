@@ -59,6 +59,7 @@ export type Interview = {
   id: string;
   interview_type: string;
   difficulty: string;
+  target_role: string;
   status: "in_progress" | "completed" | string;
   started_at: string | null;
   completed_at: string | null;

@@ -59,6 +59,12 @@ export default async function InterviewCompletePage({ params }: CompletePageProp
               </dd>
             </div>
             <div className="rounded-md border border-neutral-200 p-4">
+              <dt className="text-sm text-neutral-500">Target role</dt>
+              <dd className="mt-1 font-medium text-neutral-950">
+                {interview.target_role}
+              </dd>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-4">
               <dt className="text-sm text-neutral-500">Answered questions</dt>
               <dd className="mt-1 font-medium text-neutral-950">
                 {interview.answered_count} of {interview.total_questions}

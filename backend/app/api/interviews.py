@@ -21,6 +21,8 @@ from app.services.interview_service import (
 class CreateInterviewRequest(BaseModel):
     interview_type: str
     difficulty: str
+    target_role: str
+    custom_role: str | None = None
 
 
 class SubmitAnswerRequest(BaseModel):
@@ -41,6 +43,7 @@ class InterviewResponse(BaseModel):
     id: UUID
     interview_type: str
     difficulty: str
+    target_role: str
     status: str
     started_at: datetime | None
     completed_at: datetime | None
@@ -59,6 +62,7 @@ def _serialize_interview(interview: Interview) -> InterviewResponse:
         id=interview.id,
         interview_type=interview.interview_type,
         difficulty=interview.difficulty,
+        target_role=interview.target_role,
         status=interview.status,
         started_at=interview.started_at,
         completed_at=interview.completed_at,
@@ -81,6 +85,8 @@ def create_interview_endpoint(
         current_user=current_user,
         interview_type=payload.interview_type,
         difficulty=payload.difficulty,
+        target_role=payload.target_role,
+        custom_role=payload.custom_role,
     )
     return _serialize_interview(interview)
 

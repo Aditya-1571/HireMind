@@ -156,6 +156,9 @@ export default async function DashboardPage() {
                       {interview.interview_type} - {interview.difficulty}
                     </p>
                     <p className="mt-1 text-sm text-neutral-500">
+                      {interview.target_role}
+                    </p>
+                    <p className="mt-1 text-sm text-neutral-500">
                       {interview.answered_count} of {interview.total_questions}{" "}
                       answered
                     </p>
