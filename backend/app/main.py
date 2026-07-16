@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.ai import ai_health_check, test_ai_generation
 from app.api.auth import login_with_google, read_current_user
 from app.api.health import database_health_check, health_check
 from app.api.interviews import (
@@ -26,6 +27,8 @@ app.add_middleware(
 
 app.add_api_route("/api/health/database", database_health_check, methods=["GET"])
 app.add_api_route("/api/health", health_check, methods=["GET"])
+app.add_api_route("/api/ai/health", ai_health_check, methods=["GET"])
+app.add_api_route("/api/ai/test-generation", test_ai_generation, methods=["POST"])
 app.add_api_route("/api/auth/google", login_with_google, methods=["POST"])
 app.add_api_route("/api/auth/me", read_current_user, methods=["GET"])
 app.add_api_route("/api/resumes", list_resumes, methods=["GET"])
