@@ -72,6 +72,18 @@ export type InterviewListResponse = {
   interviews: Interview[];
 };
 
+export type AiHealth = {
+  status: "ok" | "unavailable" | string;
+  ollama_reachable: boolean;
+  model: string;
+  model_available: boolean;
+};
+
+export type AiGeneration = {
+  model: string;
+  generated_text: string;
+};
+
 export async function getBackendHealth(): Promise<BackendHealthStatus> {
   try {
     const response = await fetch(`${apiUrl}/api/health`, {
@@ -171,5 +183,28 @@ export async function getInterview(
     return (await response.json()) as Interview;
   } catch {
     return null;
+  }
+}
+
+export async function getAiHealth(): Promise<AiHealth> {
+  try {
+    const response = await fetch(`${apiUrl}/api/ai/health`, {
+      cache: "no-store",
+    });
+    const data = (await response.json()) as Partial<AiHealth>;
+
+    return {
+      status: typeof data.status === "string" ? data.status : "unavailable",
+      ollama_reachable: data.ollama_reachable === true,
+      model: typeof data.model === "string" ? data.model : "unknown",
+      model_available: data.model_available === true,
+    };
+  } catch {
+    return {
+      status: "unavailable",
+      ollama_reachable: false,
+      model: "unknown",
+      model_available: false,
+    };
   }
 }

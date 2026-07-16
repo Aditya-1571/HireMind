@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import { OllamaStatusPanel } from "@/components/OllamaStatusPanel";
 import { PageContainer } from "@/components/PageContainer";
 import { ResumeAnalysisPanel } from "@/components/ResumeAnalysisPanel";
 import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
-import { getInterviews, getResumes } from "@/lib/api";
+import { getAiHealth, getInterviews, getResumes } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
 const statusLabels: Record<string, string> = {
@@ -43,9 +44,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [resumes, interviews] = await Promise.all([
+  const [resumes, interviews, aiHealth] = await Promise.all([
     getResumes(token),
     getInterviews(token),
+    getAiHealth(),
   ]);
   const latestResume = resumes[0];
   const stats = [
@@ -87,6 +89,8 @@ export default async function DashboardPage() {
             </article>
           ))}
         </section>
+
+        <OllamaStatusPanel health={aiHealth} />
 
         <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

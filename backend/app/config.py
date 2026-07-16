@@ -27,6 +27,21 @@ class Settings(BaseSettings):
         ),
         validation_alias=AliasChoices("DATABASE_URL", "BACKEND_DATABASE_URL"),
     )
+    ollama_base_url: str = Field(
+        default="http://127.0.0.1:11434",
+        validation_alias=AliasChoices("OLLAMA_BASE_URL", "BACKEND_OLLAMA_BASE_URL"),
+    )
+    ollama_model: str = Field(
+        default="qwen2.5:1.5b",
+        validation_alias=AliasChoices("OLLAMA_MODEL", "BACKEND_OLLAMA_MODEL"),
+    )
+    ollama_timeout_seconds: int = Field(
+        default=60,
+        validation_alias=AliasChoices(
+            "OLLAMA_TIMEOUT_SECONDS",
+            "BACKEND_OLLAMA_TIMEOUT_SECONDS",
+        ),
+    )
 
     @field_validator("database_url")
     @classmethod
@@ -34,6 +49,11 @@ class Settings(BaseSettings):
         if value.startswith("postgresql://"):
             return value.replace("postgresql://", "postgresql+psycopg://", 1)
         return value
+
+    @field_validator("ollama_base_url")
+    @classmethod
+    def normalize_ollama_base_url(cls, value: str) -> str:
+        return value.rstrip("/")
 
     model_config = SettingsConfigDict(
         env_file=".env",
