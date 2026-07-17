@@ -23,6 +23,7 @@ class CreateInterviewRequest(BaseModel):
     difficulty: str
     target_role: str
     custom_role: str | None = None
+    resume_id: UUID | None = None
 
 
 class SubmitAnswerRequest(BaseModel):
@@ -52,6 +53,10 @@ class InterviewResponse(BaseModel):
     questions: list[InterviewQuestionResponse]
 
 
+class CreateInterviewResponse(InterviewResponse):
+    generation_source: str
+
+
 class InterviewListResponse(BaseModel):
     interviews: list[InterviewResponse]
 
@@ -79,16 +84,21 @@ def create_interview_endpoint(
     payload: CreateInterviewRequest,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-) -> InterviewResponse:
-    interview = create_interview(
+) -> CreateInterviewResponse:
+    interview, generation_source = create_interview(
         db=db,
         current_user=current_user,
         interview_type=payload.interview_type,
         difficulty=payload.difficulty,
         target_role=payload.target_role,
         custom_role=payload.custom_role,
+        resume_id=payload.resume_id,
     )
-    return _serialize_interview(interview)
+    serialized = _serialize_interview(interview)
+    return CreateInterviewResponse(
+        **serialized.model_dump(),
+        generation_source=generation_source,
+    )
 
 
 def list_interviews_endpoint(

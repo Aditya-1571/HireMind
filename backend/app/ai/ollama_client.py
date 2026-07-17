@@ -120,6 +120,43 @@ class OllamaClient:
             generated_text=generated_text.strip()[:500],
         )
 
+    def generate_structured_response(
+        self,
+        prompt: str,
+        response_format: str | dict[str, Any] = "json",
+    ) -> str:
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "format": response_format,
+            "options": {
+                "num_predict": 700,
+                "temperature": 0.1,
+            },
+        }
+
+        try:
+            response = requests.post(
+                self._url("/api/generate"),
+                json=payload,
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+        except requests.Timeout as exc:
+            raise OllamaGenerationTimeoutError from exc
+        except requests.RequestException as exc:
+            raise OllamaGenerationError from exc
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise OllamaGenerationError from exc
+        generated_text = data.get("response")
+        if not isinstance(generated_text, str):
+            raise OllamaGenerationError
+        return generated_text.strip()
+
 
 def build_ollama_client(
     base_url: str,

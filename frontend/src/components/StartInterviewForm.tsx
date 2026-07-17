@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { CreatedInterview, Resume } from "@/lib/api";
 
 const interviewTypes = ["HR", "Technical", "Mixed"];
 const difficultyLevels = ["Easy", "Medium", "Hard"];
@@ -18,12 +19,19 @@ const targetRoles = [
   "Custom Role",
 ];
 
-export function StartInterviewForm() {
+type StartInterviewFormProps = {
+  resumes: Resume[];
+};
+
+export function StartInterviewForm({ resumes }: StartInterviewFormProps) {
   const router = useRouter();
   const [interviewType, setInterviewType] = useState("HR");
   const [difficulty, setDifficulty] = useState("Easy");
   const [targetRole, setTargetRole] = useState("Software Engineer");
   const [customRole, setCustomRole] = useState("");
+  const [resumeId, setResumeId] = useState(
+    resumes.length === 1 ? resumes[0].id : "",
+  );
   const [isStarting, setIsStarting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const trimmedCustomRole = customRole.trim();
@@ -53,6 +61,7 @@ export function StartInterviewForm() {
           difficulty,
           target_role: targetRole,
           custom_role: isCustomRole ? trimmedCustomRole : undefined,
+          resume_id: resumeId || undefined,
         }),
       });
 
@@ -69,7 +78,7 @@ export function StartInterviewForm() {
         return;
       }
 
-      const interview = (await response.json()) as { id: string };
+      const interview = (await response.json()) as CreatedInterview;
       router.push(`/interviews/${interview.id}`);
       router.refresh();
     } catch {
@@ -148,6 +157,25 @@ export function StartInterviewForm() {
             </p>
           </div>
         ) : null}
+        {resumes.length > 0 ? (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-neutral-700">
+              Resume context
+            </label>
+            <select
+              value={resumeId}
+              onChange={(event) => setResumeId(event.target.value)}
+              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            >
+              <option value="">No resume</option>
+              {resumes.map((resume) => (
+                <option key={resume.id} value={resume.id}>
+                  {resume.original_filename}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </div>
       <button
         type="button"
@@ -155,8 +183,13 @@ export function StartInterviewForm() {
         disabled={isStarting || !isTargetRoleValid}
         className="mt-6 rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
       >
-        {isStarting ? "Starting..." : "Start Interview"}
+        {isStarting ? "Generating..." : "Start Interview"}
       </button>
+      {isStarting ? (
+        <p className="mt-4 text-sm text-neutral-600">
+          Generating personalized interview questions...
+        </p>
+      ) : null}
       {message ? <p className="mt-4 text-sm text-red-600">{message}</p> : null}
     </section>
   );

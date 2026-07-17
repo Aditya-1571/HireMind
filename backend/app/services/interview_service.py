@@ -5,8 +5,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.ai.prompts import safe_resume_context
+from app.ai.question_generator import generate_interview_questions
 from app.data.interview_questions import INTERVIEW_QUESTIONS, QUESTION_COUNT
-from app.models import Interview, InterviewQuestion, User
+from app.models import Interview, InterviewQuestion, Resume, User
 
 PREDEFINED_TARGET_ROLES = {
     "Frontend Developer",
@@ -83,11 +85,20 @@ def create_interview(
     difficulty: str,
     target_role: str,
     custom_role: str | None = None,
-) -> Interview:
-    questions = _get_question_set(interview_type, difficulty)
+    resume_id: UUID | None = None,
+) -> tuple[Interview, str]:
+    _get_question_set(interview_type, difficulty)
     final_target_role = validate_target_role(target_role, custom_role)
+    resume = _load_usable_resume_analysis(db, current_user, resume_id)
+    generated = generate_interview_questions(
+        target_role=final_target_role,
+        interview_type=interview_type,
+        difficulty=difficulty,
+        resume_context=safe_resume_context(resume.analysis_data) if resume else None,
+    )
     interview = Interview(
         user_id=current_user.id,
+        resume_id=resume.id if resume else None,
         interview_type=interview_type,
         difficulty=difficulty,
         target_role=final_target_role,
@@ -96,13 +107,37 @@ def create_interview(
     )
     interview.questions = [
         InterviewQuestion(question_text=question, sequence_number=index)
-        for index, question in enumerate(questions, start=1)
+        for index, question in enumerate(generated.questions, start=1)
     ]
 
     db.add(interview)
     db.commit()
     db.refresh(interview)
-    return _load_owned_interview(db, current_user, interview.id)
+    return _load_owned_interview(db, current_user, interview.id), generated.source
+
+
+def _load_usable_resume_analysis(
+    db: Session,
+    current_user: User,
+    resume_id: UUID | None,
+) -> Resume | None:
+    if resume_id is None:
+        return None
+
+    resume = db.scalar(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id,
+        )
+    )
+    if resume is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resume not found",
+        )
+    if resume.analysis_status != "ready" or not isinstance(resume.analysis_data, dict):
+        return None
+    return resume
 
 
 def get_interview(
