@@ -68,6 +68,10 @@ export type Interview = {
   questions: InterviewQuestion[];
 };
 
+export type CreatedInterview = Interview & {
+  generation_source: "ai" | "fallback";
+};
+
 export type InterviewListResponse = {
   interviews: Interview[];
 };
