@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -40,6 +40,7 @@ class Interview(Base):
     target_role: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(50), default="pending")
     overall_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    evaluation_data: Mapped[dict | None] = mapped_column(JSONB)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

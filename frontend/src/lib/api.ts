@@ -52,7 +52,17 @@ export type InterviewQuestion = {
   id: string;
   question_text: string;
   user_answer: string | null;
+  feedback: string | null;
+  score: number | null;
   sequence_number: number;
+};
+
+export type QuestionEvaluation = {
+  sequence_number: number;
+  score: number;
+  feedback: string;
+  strength: string;
+  improvement: string;
 };
 
 export type Interview = {
@@ -66,10 +76,19 @@ export type Interview = {
   answered_count: number;
   total_questions: number;
   questions: InterviewQuestion[];
+  overall_score: number | null;
+  overall_feedback: string | null;
+  strengths: string[];
+  improvements: string[];
+  question_evaluations: QuestionEvaluation[];
 };
 
 export type CreatedInterview = Interview & {
   generation_source: "ai" | "fallback";
+};
+
+export type CompletedInterview = Interview & {
+  evaluation_source: "ai" | "fallback";
 };
 
 export type InterviewListResponse = {
