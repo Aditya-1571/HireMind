@@ -2,17 +2,26 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.auth import get_current_user
 from app.database import get_db
 from app.models import Interview, InterviewQuestion, User
+from app.services.interview_analytics_service import (
+    DifficultyFilter,
+    InterviewSort,
+    InterviewStatusFilter,
+    InterviewSummary,
+    InterviewTypeFilter,
+    PaginatedInterviews,
+    get_interview_analytics_summary,
+    list_interview_summaries,
+)
 from app.services.interview_service import (
     create_interview,
     get_interview,
-    list_interviews,
     submit_answer,
     complete_interview,
 )
@@ -76,8 +85,52 @@ class CompleteInterviewResponse(InterviewResponse):
     evaluation_source: str
 
 
+class InterviewSummaryResponse(BaseModel):
+    id: UUID
+    target_role: str
+    interview_type: str
+    difficulty: str
+    status: str
+    overall_score: float | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    resume_filename: str | None
+    answered_count: int
+    total_questions: int
+
+
 class InterviewListResponse(BaseModel):
-    interviews: list[InterviewResponse]
+    interviews: list[InterviewSummaryResponse]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+
+
+class ScoreTrendItemResponse(BaseModel):
+    interview_id: UUID
+    date: datetime
+    target_role: str
+    interview_type: str
+    score: float
+
+
+class ScoreByTypeResponse(BaseModel):
+    interview_type: str
+    average_score: float
+    count: int
+
+
+class InterviewAnalyticsSummaryResponse(BaseModel):
+    total_interviews: int
+    completed_interviews: int
+    in_progress_interviews: int
+    average_completed_score: float | None
+    highest_score: float | None
+    latest_completed_score: float | None
+    most_practised_target_role: str | None
+    score_trend: list[ScoreTrendItemResponse]
+    average_score_by_type: list[ScoreByTypeResponse]
 
 
 def _score_value(value: object) -> float | None:
@@ -171,6 +224,39 @@ def _serialize_interview(interview: Interview) -> InterviewResponse:
     )
 
 
+def _serialize_interview_summary(
+    summary: InterviewSummary,
+) -> InterviewSummaryResponse:
+    return InterviewSummaryResponse(
+        id=summary.id,
+        target_role=summary.target_role,
+        interview_type=summary.interview_type,
+        difficulty=summary.difficulty,
+        status=summary.status,
+        overall_score=summary.overall_score,
+        started_at=summary.started_at,
+        completed_at=summary.completed_at,
+        resume_filename=summary.resume_filename,
+        answered_count=summary.answered_count,
+        total_questions=summary.total_questions,
+    )
+
+
+def _serialize_paginated_interviews(
+    paginated: PaginatedInterviews,
+) -> InterviewListResponse:
+    return InterviewListResponse(
+        interviews=[
+            _serialize_interview_summary(interview)
+            for interview in paginated.interviews
+        ],
+        page=paginated.page,
+        page_size=paginated.page_size,
+        total=paginated.total,
+        total_pages=paginated.total_pages,
+    )
+
+
 def create_interview_endpoint(
     payload: CreateInterviewRequest,
     db: Annotated[Session, Depends(get_db)],
@@ -195,10 +281,60 @@ def create_interview_endpoint(
 def list_interviews_endpoint(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=50)] = 10,
+    status: Annotated[InterviewStatusFilter | None, Query()] = None,
+    interview_type: Annotated[InterviewTypeFilter | None, Query()] = None,
+    difficulty: Annotated[DifficultyFilter | None, Query()] = None,
+    target_role: Annotated[str | None, Query(max_length=100)] = None,
+    sort: Annotated[InterviewSort, Query()] = "newest",
 ) -> InterviewListResponse:
-    interviews = list_interviews(db=db, current_user=current_user)
-    return InterviewListResponse(
-        interviews=[_serialize_interview(interview) for interview in interviews],
+    return _serialize_paginated_interviews(
+        list_interview_summaries(
+            db=db,
+            current_user=current_user,
+            page=page,
+            page_size=page_size,
+            status=status,
+            interview_type=interview_type,
+            difficulty=difficulty,
+            target_role=target_role,
+            sort=sort,
+        ),
+    )
+
+
+def get_interview_analytics_summary_endpoint(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> InterviewAnalyticsSummaryResponse:
+    summary = get_interview_analytics_summary(db=db, current_user=current_user)
+    return InterviewAnalyticsSummaryResponse(
+        total_interviews=summary.total_interviews,
+        completed_interviews=summary.completed_interviews,
+        in_progress_interviews=summary.in_progress_interviews,
+        average_completed_score=summary.average_completed_score,
+        highest_score=summary.highest_score,
+        latest_completed_score=summary.latest_completed_score,
+        most_practised_target_role=summary.most_practised_target_role,
+        score_trend=[
+            ScoreTrendItemResponse(
+                interview_id=item.interview_id,
+                date=item.date,
+                target_role=item.target_role,
+                interview_type=item.interview_type,
+                score=item.score,
+            )
+            for item in summary.score_trend
+        ],
+        average_score_by_type=[
+            ScoreByTypeResponse(
+                interview_type=item.interview_type,
+                average_score=item.average_score,
+                count=item.count,
+            )
+            for item in summary.average_score_by_type
+        ],
     )
 
 

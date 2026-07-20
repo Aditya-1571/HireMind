@@ -83,6 +83,20 @@ export type Interview = {
   question_evaluations: QuestionEvaluation[];
 };
 
+export type InterviewSummary = {
+  id: string;
+  target_role: string;
+  interview_type: string;
+  difficulty: string;
+  status: "in_progress" | "completed" | string;
+  overall_score: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  resume_filename: string | null;
+  answered_count: number;
+  total_questions: number;
+};
+
 export type CreatedInterview = Interview & {
   generation_source: "ai" | "fallback";
 };
@@ -92,7 +106,47 @@ export type CompletedInterview = Interview & {
 };
 
 export type InterviewListResponse = {
-  interviews: Interview[];
+  interviews: InterviewSummary[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+};
+
+export type InterviewListParams = {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  interview_type?: string;
+  difficulty?: string;
+  target_role?: string;
+  sort?: string;
+};
+
+export type ScoreTrendItem = {
+  interview_id: string;
+  date: string;
+  target_role: string;
+  interview_type: string;
+  score: number;
+};
+
+export type ScoreByTypeItem = {
+  interview_type: string;
+  average_score: number;
+  count: number;
+};
+
+export type InterviewAnalyticsSummary = {
+  total_interviews: number;
+  completed_interviews: number;
+  in_progress_interviews: number;
+  average_completed_score: number | null;
+  highest_score: number | null;
+  latest_completed_score: number | null;
+  most_practised_target_role: string | null;
+  score_trend: ScoreTrendItem[];
+  average_score_by_type: ScoreByTypeItem[];
 };
 
 export type AiHealth = {
@@ -159,13 +213,71 @@ export async function getResumes(token?: string): Promise<Resume[]> {
   }
 }
 
-export async function getInterviews(token?: string): Promise<Interview[]> {
+function buildInterviewSearch(params?: InterviewListParams) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== undefined && value !== null && String(value).trim()) {
+      search.set(key, String(value));
+    }
+  }
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function getInterviewSummaries(
+  token?: string,
+  params?: InterviewListParams,
+): Promise<InterviewListResponse> {
+  const empty = {
+    interviews: [],
+    page: params?.page ?? 1,
+    page_size: params?.page_size ?? 10,
+    total: 0,
+    total_pages: 0,
+  };
+
   if (!token) {
-    return [];
+    return empty;
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/interviews`, {
+    const response = await fetch(
+      `${apiUrl}/api/interviews${buildInterviewSearch(params)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return empty;
+    }
+
+    const data = (await response.json()) as Partial<InterviewListResponse>;
+    return {
+      interviews: Array.isArray(data.interviews) ? data.interviews : [],
+      page: typeof data.page === "number" ? data.page : empty.page,
+      page_size:
+        typeof data.page_size === "number" ? data.page_size : empty.page_size,
+      total: typeof data.total === "number" ? data.total : 0,
+      total_pages: typeof data.total_pages === "number" ? data.total_pages : 0,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export async function getInterviewAnalyticsSummary(
+  token?: string,
+): Promise<InterviewAnalyticsSummary | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/interviews/analytics/summary`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -173,13 +285,12 @@ export async function getInterviews(token?: string): Promise<Interview[]> {
     });
 
     if (!response.ok) {
-      return [];
+      return null;
     }
 
-    const data = (await response.json()) as Partial<InterviewListResponse>;
-    return Array.isArray(data.interviews) ? data.interviews : [];
+    return (await response.json()) as InterviewAnalyticsSummary;
   } catch {
-    return [];
+    return null;
   }
 }
 
