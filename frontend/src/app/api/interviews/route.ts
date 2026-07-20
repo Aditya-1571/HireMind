@@ -16,15 +16,17 @@ function getErrorMessage(error: ErrorResponse, fallback: string) {
       : fallback;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const token = await getSessionToken();
 
   if (!token) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  const search = new URL(request.url).search;
+
   try {
-    const response = await fetch(`${apiUrl}/api/interviews`, {
+    const response = await fetch(`${apiUrl}/api/interviews${search}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

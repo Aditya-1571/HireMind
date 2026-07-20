@@ -1,10 +1,17 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OllamaStatusPanel } from "@/components/OllamaStatusPanel";
 import { PageContainer } from "@/components/PageContainer";
+import { PerformanceTrendChart } from "@/components/PerformanceTrendChart";
 import { ResumeAnalysisPanel } from "@/components/ResumeAnalysisPanel";
 import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
-import { getAiHealth, getInterviews, getResumes } from "@/lib/api";
+import {
+  getAiHealth,
+  getInterviewAnalyticsSummary,
+  getInterviewSummaries,
+  getResumes,
+} from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
 const statusLabels: Record<string, string> = {
@@ -44,9 +51,14 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [resumes, interviews, aiHealth] = await Promise.all([
+  const [resumes, recentInterviews, analytics, aiHealth] = await Promise.all([
     getResumes(token),
-    getInterviews(token),
+    getInterviewSummaries(token, {
+      page: 1,
+      page_size: 5,
+      sort: "newest",
+    }),
+    getInterviewAnalyticsSummary(token),
     getAiHealth(),
   ]);
   const latestResume = resumes[0];
@@ -55,8 +67,18 @@ export default async function DashboardPage() {
       label: "Resume Status",
       value: getResumeStatusLabel(latestResume?.processing_status),
     },
-    { label: "Total Interviews", value: String(interviews.length) },
-    { label: "Average Score", value: "N/A" },
+    {
+      label: "Total Interviews",
+      value: String(analytics?.total_interviews ?? recentInterviews.total),
+    },
+    {
+      label: "Average Score",
+      value:
+        analytics?.average_completed_score === null ||
+        analytics?.average_completed_score === undefined
+          ? "N/A"
+          : `${analytics.average_completed_score}/100`,
+    },
   ];
 
   return (
@@ -88,6 +110,87 @@ export default async function DashboardPage() {
               </p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <article className="rounded-lg border border-neutral-200 bg-white p-5">
+            <p className="text-sm font-medium text-neutral-500">Completed</p>
+            <p className="mt-3 text-2xl font-semibold text-neutral-950">
+              {analytics?.completed_interviews ?? 0}
+            </p>
+          </article>
+          <article className="rounded-lg border border-neutral-200 bg-white p-5">
+            <p className="text-sm font-medium text-neutral-500">In Progress</p>
+            <p className="mt-3 text-2xl font-semibold text-neutral-950">
+              {analytics?.in_progress_interviews ?? 0}
+            </p>
+          </article>
+          <article className="rounded-lg border border-neutral-200 bg-white p-5">
+            <p className="text-sm font-medium text-neutral-500">Highest Score</p>
+            <p className="mt-3 text-2xl font-semibold text-neutral-950">
+              {analytics?.highest_score === null ||
+              analytics?.highest_score === undefined
+                ? "N/A"
+                : `${analytics.highest_score}/100`}
+            </p>
+          </article>
+          <article className="rounded-lg border border-neutral-200 bg-white p-5">
+            <p className="text-sm font-medium text-neutral-500">Latest Score</p>
+            <p className="mt-3 text-2xl font-semibold text-neutral-950">
+              {analytics?.latest_completed_score === null ||
+              analytics?.latest_completed_score === undefined
+                ? "N/A"
+                : `${analytics.latest_completed_score}/100`}
+            </p>
+          </article>
+        </section>
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          <article className="rounded-lg border border-neutral-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-neutral-950">
+              Score Trend
+            </h2>
+            <div className="mt-5">
+              <PerformanceTrendChart items={analytics?.score_trend ?? []} />
+            </div>
+          </article>
+          <article className="rounded-lg border border-neutral-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-neutral-950">
+              Practice Focus
+            </h2>
+            <p className="mt-3 text-sm text-neutral-600">
+              Most-practised role:{" "}
+              <span className="font-medium text-neutral-950">
+                {analytics?.most_practised_target_role ?? "Not available"}
+              </span>
+            </p>
+            <div className="mt-5 space-y-3">
+              {(analytics?.average_score_by_type ?? []).length > 0 ? (
+                (analytics?.average_score_by_type ?? []).map((item) => (
+                  <div key={item.interview_type}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-neutral-700">
+                        {item.interview_type}
+                      </span>
+                      <span className="text-neutral-500">
+                        {item.average_score}/100
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 rounded bg-neutral-100">
+                      <div
+                        className="h-2 rounded bg-neutral-950"
+                        style={{ width: `${item.average_score}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-neutral-500">
+                  No completed scored interviews yet.
+                </p>
+              )}
+            </div>
+          </article>
         </section>
 
         <OllamaStatusPanel health={aiHealth} />
@@ -148,9 +251,9 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-neutral-950">
             Recent Interviews
           </h2>
-          {interviews.length > 0 ? (
+          {recentInterviews.interviews.length > 0 ? (
             <div className="mt-5 divide-y divide-neutral-200">
-              {interviews.slice(0, 5).map((interview) => (
+              {recentInterviews.interviews.map((interview) => (
                 <div
                   key={interview.id}
                   className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"
@@ -166,11 +269,30 @@ export default async function DashboardPage() {
                       {interview.answered_count} of {interview.total_questions}{" "}
                       answered
                     </p>
+                    {interview.overall_score !== null ? (
+                      <p className="mt-1 text-sm text-neutral-500">
+                        Score: {interview.overall_score}/100
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="text-sm text-neutral-500">
-                    {interview.status === "completed"
-                      ? formatDate(interview.completed_at)
-                      : "In progress"}
+                  <div className="flex flex-col gap-2 text-sm sm:items-end">
+                    <span className="text-neutral-500">
+                      {interview.status === "completed"
+                        ? formatDate(interview.completed_at)
+                        : "In progress"}
+                    </span>
+                    <Link
+                      href={
+                        interview.status === "completed"
+                          ? `/interviews/${interview.id}/complete`
+                          : `/interviews/${interview.id}`
+                      }
+                      className="font-medium text-neutral-950 hover:underline"
+                    >
+                      {interview.status === "completed"
+                        ? "View result"
+                        : "Continue"}
+                    </Link>
                   </div>
                 </div>
               ))}
