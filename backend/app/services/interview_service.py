@@ -1,10 +1,13 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.ai.answer_evaluator import AnswerEvaluationResult, evaluate_interview_answers
+from app.ai.evaluation_prompts import EvaluationAnswer
 from app.ai.prompts import safe_resume_context
 from app.ai.question_generator import generate_interview_questions
 from app.data.interview_questions import INTERVIEW_QUESTIONS, QUESTION_COUNT
@@ -64,7 +67,7 @@ def _load_owned_interview(
 ) -> Interview:
     interview = db.scalar(
         select(Interview)
-        .options(selectinload(Interview.questions))
+        .options(selectinload(Interview.questions), selectinload(Interview.resume))
         .where(
             Interview.id == interview_id,
             Interview.user_id == current_user.id,
@@ -204,7 +207,7 @@ def complete_interview(
     db: Session,
     current_user: User,
     interview_id: UUID,
-) -> Interview:
+) -> tuple[Interview, str]:
     interview = _load_owned_interview(db, current_user, interview_id)
     if _answered_count(interview) < QUESTION_COUNT:
         raise HTTPException(
@@ -212,9 +215,66 @@ def complete_interview(
             detail="Answer all five questions before completing the interview",
         )
 
+    if _has_saved_evaluation(interview):
+        return _load_owned_interview(db, current_user, interview_id), "fallback"
+
+    evaluation = evaluate_interview_answers(
+        target_role=interview.target_role,
+        interview_type=interview.interview_type,
+        difficulty=interview.difficulty,
+        answers=[
+            EvaluationAnswer(
+                sequence_number=question.sequence_number,
+                question=question.question_text,
+                answer=question.user_answer or "",
+            )
+            for question in sorted(
+                interview.questions,
+                key=lambda item: item.sequence_number,
+            )
+        ],
+        resume_context=(
+            safe_resume_context(interview.resume.analysis_data)
+            if interview.resume
+            and interview.resume.analysis_status == "ready"
+            and isinstance(interview.resume.analysis_data, dict)
+            else None
+        ),
+    )
+    _apply_evaluation(interview, evaluation)
+
     if interview.status != "completed":
         interview.status = "completed"
+    if interview.completed_at is None:
         interview.completed_at = datetime.now(UTC)
-        db.commit()
 
-    return _load_owned_interview(db, current_user, interview_id)
+    db.commit()
+    return _load_owned_interview(db, current_user, interview_id), evaluation.source
+
+
+def _has_saved_evaluation(interview: Interview) -> bool:
+    return (
+        interview.status == "completed"
+        and isinstance(interview.evaluation_data, dict)
+        and interview.overall_score is not None
+        and all(
+            question.score is not None and question.feedback
+            for question in interview.questions
+        )
+    )
+
+
+def _apply_evaluation(
+    interview: Interview,
+    evaluation: AnswerEvaluationResult,
+) -> None:
+    by_sequence = {
+        item.sequence_number: item for item in evaluation.question_evaluations
+    }
+    for question in interview.questions:
+        question_evaluation = by_sequence[question.sequence_number]
+        question.score = Decimal(str(question_evaluation.score))
+        question.feedback = question_evaluation.feedback
+
+    interview.overall_score = Decimal(str(evaluation.overall_score))
+    interview.evaluation_data = evaluation.evaluation_data

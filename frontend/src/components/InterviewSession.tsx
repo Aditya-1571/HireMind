@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Interview } from "@/lib/api";
+import type { CompletedInterview, Interview } from "@/lib/api";
 
 type InterviewSessionProps = {
   initialInterview: Interview;
@@ -14,6 +14,7 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
   const [answer, setAnswer] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const currentQuestion = useMemo(
     () =>
@@ -30,6 +31,12 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
   const isComplete = interview.status === "completed" || !currentQuestion;
 
   const completeInterview = async () => {
+    if (isCompleting) {
+      return;
+    }
+
+    setIsCompleting(true);
+    setMessage(null);
     const response = await fetch(`/api/interviews/${interview.id}/complete`, {
       method: "POST",
     });
@@ -43,10 +50,14 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
           ? error.message
           : "Unable to complete interview.",
       );
+      setIsCompleting(false);
       return;
     }
 
-    router.push(`/interviews/${interview.id}/complete`);
+    const completedInterview = (await response.json()) as CompletedInterview;
+    router.push(
+      `/interviews/${interview.id}/complete?source=${completedInterview.evaluation_source}`,
+    );
     router.refresh();
   };
 
@@ -129,16 +140,17 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
           </label>
           <textarea
             id="answer"
-            value={answer}
-            onChange={(event) => setAnswer(event.target.value)}
-            rows={8}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+              disabled={isSubmitting || isCompleting}
+              rows={8}
+              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
           />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={submitAnswer}
-              disabled={isSubmitting || !answer.trim()}
+              disabled={isSubmitting || isCompleting || !answer.trim()}
               className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
             >
               {isSubmitting ? "Submitting..." : "Submit"}
@@ -153,14 +165,17 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
       {isComplete ? (
         <div className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4">
           <p className="text-sm font-medium text-neutral-700">
-            All questions have been answered.
+            {isCompleting
+              ? "Evaluating your interview responses..."
+              : "All questions have been answered."}
           </p>
           <button
             type="button"
             onClick={completeInterview}
-            className="mt-4 rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            disabled={isCompleting}
+            className="mt-4 rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
           >
-            View Summary
+            {isCompleting ? "Evaluating..." : "View Summary"}
           </button>
         </div>
       ) : null}
