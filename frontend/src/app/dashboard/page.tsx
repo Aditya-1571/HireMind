@@ -269,6 +269,9 @@ export default async function DashboardPage() {
                       {interview.answered_count} of {interview.total_questions}{" "}
                       answered
                     </p>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      {interview.question_count} questions requested
+                    </p>
                     {interview.overall_score !== null ? (
                       <p className="mt-1 text-sm text-neutral-500">
                         Score: {interview.overall_score}/100

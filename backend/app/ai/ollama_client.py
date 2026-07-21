@@ -124,6 +124,8 @@ class OllamaClient:
         self,
         prompt: str,
         response_format: str | dict[str, Any] = "json",
+        num_predict: int = 700,
+        temperature: float = 0.1,
     ) -> str:
         payload = {
             "model": self.model,
@@ -131,8 +133,8 @@ class OllamaClient:
             "stream": False,
             "format": response_format,
             "options": {
-                "num_predict": 700,
-                "temperature": 0.1,
+                "num_predict": max(1, min(num_predict, 4000)),
+                "temperature": temperature,
             },
         }
 

@@ -1,9 +1,13 @@
 from dataclasses import dataclass
+from typing import Literal
 
-MAX_ANSWER_LENGTH = 1000
+# This prompt may include up to 30 answers. Truncation is prompt-only; the
+# full answers remain stored on InterviewQuestion.user_answer.
+MAX_ANSWER_LENGTH = 700
 MAX_QUESTION_LENGTH = 300
 MAX_CONTEXT_ITEMS = 4
 MAX_CONTEXT_ITEM_LENGTH = 140
+EvaluationStyle = Literal["beginner_friendly", "balanced", "strict"]
 
 
 @dataclass(frozen=True)
@@ -61,6 +65,7 @@ def build_answer_evaluation_prompt(
     target_role: str,
     interview_type: str,
     difficulty: str,
+    evaluation_style: EvaluationStyle,
     answers: list[EvaluationAnswer],
     resume_context: dict[str, list[str]] | None = None,
     retry_note: str | None = None,
@@ -75,11 +80,26 @@ def build_answer_evaluation_prompt(
     context = "\n".join(_context_lines(resume_context))
     context_block = f"\nRelevant resume context:\n{context}" if context else ""
     retry = f"\nFix this validation issue only: {retry_note}." if retry_note else ""
+    style_guidance = {
+        "beginner_friendly": (
+            "Use a supportive tone, credit partially correct understanding, "
+            "and emphasize practical learning steps without inflating incorrect answers."
+        ),
+        "balanced": (
+            "Use a normal professional standard with balanced scoring and constructive feedback."
+        ),
+        "strict": (
+            "Use higher expectations for accuracy, completeness, examples, and technical depth. "
+            "Vague or unsupported answers should receive appropriately lower scores."
+        ),
+    }[evaluation_style]
 
     return f"""You are a fair technical interviewer evaluating completed interview answers.
 Target role: {target_role}
 Interview type: {interview_type}
 Difficulty: {difficulty}
+Evaluation style: {evaluation_style}
+Style guidance: {style_guidance}
 Evaluate only relevance, correctness, clarity, depth, examples, and communication quality.
 Do not infer or mention protected traits, identity, health, politics, religion, caste, appearance, age, gender, or accent.
 Keep feedback concise and constructive. Return only valid JSON. Do not include markdown fences.

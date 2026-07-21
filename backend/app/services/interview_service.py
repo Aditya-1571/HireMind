@@ -1,3 +1,5 @@
+import re
+import string
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -10,8 +12,22 @@ from app.ai.answer_evaluator import AnswerEvaluationResult, evaluate_interview_a
 from app.ai.evaluation_prompts import EvaluationAnswer
 from app.ai.prompts import safe_resume_context
 from app.ai.question_generator import generate_interview_questions
-from app.data.interview_questions import INTERVIEW_QUESTIONS, QUESTION_COUNT
+from app.data.interview_questions import INTERVIEW_QUESTIONS
 from app.models import Interview, InterviewQuestion, Resume, User
+
+MIN_QUESTION_COUNT = 5
+MAX_QUESTION_COUNT = 30
+DEFAULT_QUESTION_COUNT = 10
+LEGACY_QUESTION_COUNT = 5
+SUPPORTED_TIME_LIMITS = {15, 30, 45, 60}
+SUPPORTED_EVALUATION_STYLES = {"beginner_friendly", "balanced", "strict"}
+SUPPORTED_ANSWER_MODES = {"text"}
+
+
+def _question_key(value: str) -> str:
+    normalized = re.sub(r"\s+", " ", value).strip().casefold()
+    normalized = normalized.translate(str.maketrans("", "", string.punctuation))
+    return re.sub(r"\s+", " ", normalized).strip()
 
 PREDEFINED_TARGET_ROLES = {
     "Frontend Developer",
@@ -34,7 +50,43 @@ def _get_question_set(interview_type: str, difficulty: str) -> list[str]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Choose a valid interview type and difficulty",
         )
-    return questions[:QUESTION_COUNT]
+    return questions
+
+
+def _validate_question_count(question_count: int) -> int:
+    if not MIN_QUESTION_COUNT <= question_count <= MAX_QUESTION_COUNT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Question count must be between 5 and 30",
+        )
+    return question_count
+
+
+def _validate_time_limit(time_limit_minutes: int | None) -> int | None:
+    if time_limit_minutes is not None and time_limit_minutes not in SUPPORTED_TIME_LIMITS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Choose a valid time limit",
+        )
+    return time_limit_minutes
+
+
+def _validate_evaluation_style(evaluation_style: str) -> str:
+    if evaluation_style not in SUPPORTED_EVALUATION_STYLES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Choose a valid evaluation style",
+        )
+    return evaluation_style
+
+
+def _validate_answer_mode(answer_mode: str) -> str:
+    if answer_mode not in SUPPORTED_ANSWER_MODES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only text answers are supported",
+        )
+    return answer_mode
 
 
 def validate_target_role(target_role: str, custom_role: str | None = None) -> str:
@@ -58,6 +110,10 @@ def validate_target_role(target_role: str, custom_role: str | None = None) -> st
 
 def _answered_count(interview: Interview) -> int:
     return sum(1 for question in interview.questions if question.user_answer)
+
+
+def _actual_question_count(interview: Interview) -> int:
+    return len(interview.questions) or getattr(interview, "question_count", 0) or LEGACY_QUESTION_COUNT
 
 
 def _load_owned_interview(
@@ -89,8 +145,16 @@ def create_interview(
     target_role: str,
     custom_role: str | None = None,
     resume_id: UUID | None = None,
+    question_count: int = DEFAULT_QUESTION_COUNT,
+    time_limit_minutes: int | None = None,
+    evaluation_style: str = "balanced",
+    answer_mode: str = "text",
 ) -> tuple[Interview, str]:
     _get_question_set(interview_type, difficulty)
+    question_count = _validate_question_count(question_count)
+    time_limit_minutes = _validate_time_limit(time_limit_minutes)
+    evaluation_style = _validate_evaluation_style(evaluation_style)
+    answer_mode = _validate_answer_mode(answer_mode)
     final_target_role = validate_target_role(target_role, custom_role)
     resume = _load_usable_resume_analysis(db, current_user, resume_id)
     generated = generate_interview_questions(
@@ -98,7 +162,14 @@ def create_interview(
         interview_type=interview_type,
         difficulty=difficulty,
         resume_context=safe_resume_context(resume.analysis_data) if resume else None,
+        question_count=question_count,
     )
+    if len({_question_key(question) for question in generated.questions}) != len(
+        generated.questions
+    ):
+        raise RuntimeError("Generated interview questions must be unique")
+    if len(generated.questions) != question_count:
+        raise RuntimeError("Generated interview questions did not match requested count")
     interview = Interview(
         user_id=current_user.id,
         resume_id=resume.id if resume else None,
@@ -106,6 +177,10 @@ def create_interview(
         difficulty=difficulty,
         target_role=final_target_role,
         status="in_progress",
+        question_count=question_count,
+        time_limit_minutes=time_limit_minutes,
+        evaluation_style=evaluation_style,
+        answer_mode=answer_mode,
         started_at=datetime.now(UTC),
     )
     interview.questions = [
@@ -209,10 +284,17 @@ def complete_interview(
     interview_id: UUID,
 ) -> tuple[Interview, str]:
     interview = _load_owned_interview(db, current_user, interview_id)
-    if _answered_count(interview) < QUESTION_COUNT:
+    actual_question_count = len(interview.questions)
+    expected_count = actual_question_count if actual_question_count > 0 else _actual_question_count(interview)
+    if expected_count <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Answer all five questions before completing the interview",
+            detail="Interview has no questions to evaluate",
+        )
+    if _answered_count(interview) < expected_count:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Answer all questions before completing the interview",
         )
 
     if _has_saved_evaluation(interview):
@@ -222,6 +304,7 @@ def complete_interview(
         target_role=interview.target_role,
         interview_type=interview.interview_type,
         difficulty=interview.difficulty,
+        evaluation_style=interview.evaluation_style or "balanced",
         answers=[
             EvaluationAnswer(
                 sequence_number=question.sequence_number,
@@ -247,6 +330,9 @@ def complete_interview(
         interview.status = "completed"
     if interview.completed_at is None:
         interview.completed_at = datetime.now(UTC)
+    if interview.started_at and interview.completed_at:
+        duration = int((interview.completed_at - interview.started_at).total_seconds())
+        interview.duration_seconds = max(0, duration)
 
     db.commit()
     return _load_owned_interview(db, current_user, interview_id), evaluation.source
