@@ -303,6 +303,10 @@ export function InterviewHistoryClient() {
                   <p className="mt-1 text-sm text-neutral-500">
                     Resume: {interview.resume_filename ?? "Not selected"}
                   </p>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {interview.answered_count} of {interview.total_questions} answered -{" "}
+                    {interview.question_count} questions requested
+                  </p>
                 </div>
                 <dl className="grid gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
                   <div>

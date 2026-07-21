@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.ai.evaluation_prompts import (
+    EvaluationStyle,
     EvaluationAnswer,
     build_answer_evaluation_prompt,
 )
@@ -17,7 +18,6 @@ from app.ai.ollama_client import (
     build_ollama_client,
 )
 from app.config import settings
-from app.data.interview_questions import QUESTION_COUNT
 
 EvaluationSource = Literal["ai", "fallback"]
 MAX_FEEDBACK_LENGTH = 500
@@ -213,7 +213,10 @@ def _fallback_score(question: str, answer: str) -> int:
     return min(score, 7)
 
 
-def _fallback_evaluation(answers: list[EvaluationAnswer]) -> AnswerEvaluationResult:
+def _fallback_evaluation(
+    answers: list[EvaluationAnswer],
+    evaluation_style: EvaluationStyle,
+) -> AnswerEvaluationResult:
     evaluations: list[QuestionEvaluation] = []
     for item in answers:
         score = _fallback_score(item.question, item.answer)
@@ -234,6 +237,11 @@ def _fallback_evaluation(answers: list[EvaluationAnswer]) -> AnswerEvaluationRes
             strength = "The answer provides useful detail and communicates a clear response."
             improvement = "Make the example more concrete and include the outcome or impact."
 
+        if evaluation_style == "beginner_friendly":
+            feedback = f"{feedback} Focus next on one concrete improvement step."
+        elif evaluation_style == "strict":
+            feedback = f"{feedback} A stronger answer should be more precise, complete, and evidence-backed."
+
         evaluations.append(
             QuestionEvaluation(
                 sequence_number=item.sequence_number,
@@ -248,7 +256,8 @@ def _fallback_evaluation(answers: list[EvaluationAnswer]) -> AnswerEvaluationRes
         overall_score=_overall_score(evaluations),
         overall_feedback=(
             "This standard evaluation is based on answer completeness, relevance, "
-            "clarity, and use of examples."
+            "clarity, and use of examples. The selected evaluation style guided "
+            "the feedback tone and expectations."
         ),
         strengths=[
             "Completed all interview answers.",
@@ -268,14 +277,15 @@ def evaluate_interview_answers(
     target_role: str,
     interview_type: str,
     difficulty: str,
+    evaluation_style: EvaluationStyle = "balanced",
     answers: list[EvaluationAnswer],
     resume_context: dict[str, list[str]] | None = None,
 ) -> AnswerEvaluationResult:
-    if len(answers) != QUESTION_COUNT:
-        raise RuntimeError("Interview evaluation requires exactly five answers")
+    if not 1 <= len(answers) <= 30:
+        raise RuntimeError("Interview evaluation requires 1 to 30 answers")
 
     expected_sequences = {item.sequence_number for item in answers}
-    if len(expected_sequences) != QUESTION_COUNT:
+    if len(expected_sequences) != len(answers):
         raise RuntimeError("Interview evaluation requires unique question sequences")
 
     client = build_ollama_client(
@@ -289,6 +299,7 @@ def evaluate_interview_answers(
             target_role=target_role,
             interview_type=interview_type,
             difficulty=difficulty,
+            evaluation_style=evaluation_style,
             answers=answers,
             resume_context=resume_context,
             retry_note=retry_note,
@@ -310,4 +321,4 @@ def evaluate_interview_answers(
         ):
             break
 
-    return _fallback_evaluation(answers)
+    return _fallback_evaluation(answers, evaluation_style)

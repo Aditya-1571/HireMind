@@ -1,4 +1,4 @@
-QUESTION_COUNT = 5
+LEGACY_STATIC_QUESTION_COUNT = 5
 
 # Temporary static question bank. This is intentionally simple and will be
 # replaced by AI-generated interview questions in a later phase.

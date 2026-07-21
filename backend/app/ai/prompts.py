@@ -120,12 +120,15 @@ def build_question_generation_prompt(
     interview_type: str,
     difficulty: str,
     resume_context: dict[str, list[str]] | None,
+    question_count: int,
     retry_note: str | None = None,
 ) -> str:
+    technical_target = (question_count * 6 + 9) // 10
+    hr_target = question_count - technical_target
     category_rule = {
-        "HR": "Return exactly 5 HR questions. Every category value must be hr.",
-        "Technical": "Return exactly 5 technical questions. Every category value must be technical. Do not use hr.",
-        "Mixed": "Return exactly 3 technical questions with category technical and 2 HR questions with category hr.",
+        "HR": f"Return exactly {question_count} HR questions. Every category value must be hr.",
+        "Technical": f"Return exactly {question_count} technical questions. Every category value must be technical. Do not use hr.",
+        "Mixed": f"Return exactly {technical_target} technical questions and {hr_target} HR questions.",
     }[interview_type]
     context_lines = []
     for key, values in (resume_context or {}).items():
@@ -134,7 +137,7 @@ def build_question_generation_prompt(
     retry = f"\nFix this validation issue only: {retry_note}." if retry_note else ""
 
     return f"""You are a professional interview-question generator.
-Create concise interview questions for this target role: {target_role}.
+Create exactly {question_count} concise interview questions for this target role: {target_role}.
 Interview type: {interview_type}. Difficulty: {difficulty}.
 {category_rule}
 Use only the structured resume context below. Do not invent resume facts.

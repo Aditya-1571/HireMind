@@ -21,6 +21,30 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatDuration(seconds: number | null, startedAt: string | null, completedAt: string | null) {
+  let totalSeconds = seconds;
+  if (totalSeconds === null && startedAt && completedAt) {
+    totalSeconds = Math.max(
+      0,
+      Math.round((new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000),
+    );
+  }
+  if (totalSeconds === null) {
+    return "Not available";
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function formatEvaluationStyle(style: string) {
+  return style
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default async function InterviewCompletePage({
   params,
   searchParams,
@@ -91,6 +115,36 @@ export default async function InterviewCompletePage({
               <dt className="text-sm text-neutral-500">Answered questions</dt>
               <dd className="mt-1 font-medium text-neutral-950">
                 {interview.answered_count} of {interview.total_questions}
+              </dd>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-4">
+              <dt className="text-sm text-neutral-500">Question count</dt>
+              <dd className="mt-1 font-medium text-neutral-950">
+                {interview.question_count}
+              </dd>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-4">
+              <dt className="text-sm text-neutral-500">Evaluation style</dt>
+              <dd className="mt-1 font-medium text-neutral-950">
+                {formatEvaluationStyle(interview.evaluation_style)}
+              </dd>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-4">
+              <dt className="text-sm text-neutral-500">Time limit</dt>
+              <dd className="mt-1 font-medium text-neutral-950">
+                {interview.time_limit_minutes
+                  ? `${interview.time_limit_minutes} minutes`
+                  : "Unlimited"}
+              </dd>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-4">
+              <dt className="text-sm text-neutral-500">Duration</dt>
+              <dd className="mt-1 font-medium text-neutral-950">
+                {formatDuration(
+                  interview.duration_seconds,
+                  interview.started_at,
+                  interview.completed_at,
+                )}
               </dd>
             </div>
             <div className="rounded-md border border-neutral-200 p-4">

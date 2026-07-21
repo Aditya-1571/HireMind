@@ -104,6 +104,11 @@ export type Interview = {
   status: "in_progress" | "completed" | string;
   started_at: string | null;
   completed_at: string | null;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+  duration_seconds: number | null;
   answered_count: number;
   total_questions: number;
   questions: InterviewQuestion[];
@@ -123,6 +128,11 @@ export type InterviewSummary = {
   overall_score: number | null;
   started_at: string | null;
   completed_at: string | null;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+  duration_seconds: number | null;
   resume_filename: string | null;
   answered_count: number;
   total_questions: number;

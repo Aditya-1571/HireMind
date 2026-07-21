@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.api.auth import get_current_user
@@ -33,6 +33,19 @@ class CreateInterviewRequest(BaseModel):
     target_role: str
     custom_role: str | None = None
     resume_id: UUID | None = None
+    question_count: int = Field(default=10, ge=5, le=30)
+    time_limit_minutes: Literal[15, 30, 45, 60] | None = None
+    evaluation_style: Literal["beginner_friendly", "balanced", "strict"] = "balanced"
+    answer_mode: Literal["text"] = "text"
+
+    @field_validator("question_count", mode="before")
+    @classmethod
+    def reject_non_integer_question_count(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("Question count must be an integer from 5 to 30")
+        if isinstance(value, float):
+            raise ValueError("Question count must be an integer from 5 to 30")
+        return value
 
 
 class SubmitAnswerRequest(BaseModel):
@@ -67,6 +80,11 @@ class InterviewResponse(BaseModel):
     status: str
     started_at: datetime | None
     completed_at: datetime | None
+    question_count: int
+    time_limit_minutes: int | None
+    evaluation_style: str
+    answer_mode: str
+    duration_seconds: int | None
     answered_count: int
     total_questions: int
     questions: list[InterviewQuestionResponse]
@@ -94,6 +112,11 @@ class InterviewSummaryResponse(BaseModel):
     overall_score: float | None
     started_at: datetime | None
     completed_at: datetime | None
+    question_count: int
+    time_limit_minutes: int | None
+    evaluation_style: str
+    answer_mode: str
+    duration_seconds: int | None
     resume_filename: str | None
     answered_count: int
     total_questions: int
@@ -183,6 +206,11 @@ def _serialize_interview(interview: Interview) -> InterviewResponse:
         status=interview.status,
         started_at=interview.started_at,
         completed_at=interview.completed_at,
+        question_count=getattr(interview, "question_count", None) or len(questions),
+        time_limit_minutes=getattr(interview, "time_limit_minutes", None),
+        evaluation_style=getattr(interview, "evaluation_style", None) or "balanced",
+        answer_mode=getattr(interview, "answer_mode", None) or "text",
+        duration_seconds=getattr(interview, "duration_seconds", None),
         answered_count=sum(1 for question in questions if question.user_answer),
         total_questions=len(questions),
         questions=[
@@ -236,6 +264,11 @@ def _serialize_interview_summary(
         overall_score=summary.overall_score,
         started_at=summary.started_at,
         completed_at=summary.completed_at,
+        question_count=summary.question_count,
+        time_limit_minutes=summary.time_limit_minutes,
+        evaluation_style=summary.evaluation_style,
+        answer_mode=summary.answer_mode,
+        duration_seconds=summary.duration_seconds,
         resume_filename=summary.resume_filename,
         answered_count=summary.answered_count,
         total_questions=summary.total_questions,
@@ -270,6 +303,10 @@ def create_interview_endpoint(
         target_role=payload.target_role,
         custom_role=payload.custom_role,
         resume_id=payload.resume_id,
+        question_count=payload.question_count,
+        time_limit_minutes=payload.time_limit_minutes,
+        evaluation_style=payload.evaluation_style,
+        answer_mode=payload.answer_mode,
     )
     serialized = _serialize_interview(interview)
     return CreateInterviewResponse(

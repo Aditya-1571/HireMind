@@ -8,8 +8,9 @@ from uuid import UUID
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.data.interview_questions import QUESTION_COUNT
 from app.models import Interview, User
+
+LEGACY_QUESTION_COUNT = 5
 
 InterviewStatusFilter = Literal["in_progress", "completed"]
 InterviewTypeFilter = Literal["HR", "Technical", "Mixed"]
@@ -34,6 +35,11 @@ class InterviewSummary:
     overall_score: float | None
     started_at: datetime | None
     completed_at: datetime | None
+    question_count: int
+    time_limit_minutes: int | None
+    evaluation_style: str
+    answer_mode: str
+    duration_seconds: int | None
     resume_filename: str | None
     answered_count: int
     total_questions: int
@@ -182,13 +188,27 @@ def list_interview_summaries(
                 overall_score=_score_value(interview.overall_score),
                 started_at=interview.started_at,
                 completed_at=interview.completed_at,
+                question_count=(
+                    len(interview.questions)
+                    or getattr(interview, "question_count", None)
+                    or LEGACY_QUESTION_COUNT
+                ),
+                time_limit_minutes=getattr(interview, "time_limit_minutes", None),
+                evaluation_style=getattr(interview, "evaluation_style", None)
+                or "balanced",
+                answer_mode=getattr(interview, "answer_mode", None) or "text",
+                duration_seconds=getattr(interview, "duration_seconds", None),
                 resume_filename=(
                     interview.resume.original_filename if interview.resume else None
                 ),
                 answered_count=sum(
                     1 for question in interview.questions if question.user_answer
                 ),
-                total_questions=len(interview.questions) or QUESTION_COUNT,
+                total_questions=(
+                    len(interview.questions)
+                    or getattr(interview, "question_count", None)
+                    or LEGACY_QUESTION_COUNT
+                ),
             )
             for interview in interviews
         ],
