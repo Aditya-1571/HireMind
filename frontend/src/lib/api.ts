@@ -34,14 +34,45 @@ export type ResumeAnalysis = {
   email: string | null;
   phone: string | null;
   summary: string | null;
-  skills: string[];
+  skills: string[] | ResumeSkillCategories;
+  skills_categorized?: ResumeSkillCategories;
   programming_languages: string[];
+  ml_ai?: string[];
   frameworks_and_libraries: string[];
   tools_and_platforms: string[];
+  databases?: string[];
+  cloud_devops?: string[];
   education: string[];
-  experience: string[];
-  projects: string[];
+  experience: string[] | ResumeExperience[];
+  projects: string[] | ResumeProject[];
   certifications: string[];
+  achievements?: string[];
+};
+
+export type ResumeSkillCategories = {
+  programming_languages?: string[];
+  ml_ai?: string[];
+  frameworks_libraries?: string[];
+  tools_platforms?: string[];
+  databases?: string[];
+  cloud_devops?: string[];
+  other?: string[];
+};
+
+export type ResumeProject = {
+  name: string;
+  description: string[];
+  technologies: string[];
+};
+
+export type ResumeExperience = {
+  organization: string;
+  role: string;
+  start_date: string | null;
+  end_date: string | null;
+  location: string | null;
+  description: string[];
+  experience_type: "job" | "internship" | "virtual_internship" | "simulation" | string;
 };
 
 export type ResumeListResponse = {
