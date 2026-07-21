@@ -8,72 +8,32 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Resume, User
+from app.services.resume_structure_helpers import (
+    SECTION_ALIASES,
+    certifications_from_sections,
+    clean_line,
+    extract_skills,
+    group_experience,
+    group_projects,
+    line_items,
+    section_items,
+    section_text,
+    split_sections,
+)
 
-ANALYSIS_VERSION = "deterministic-v1"
-SECTION_ALIASES = {
-    "summary": {"summary", "professional summary", "profile", "objective"},
-    "skills": {"skills", "technical skills", "core skills", "competencies"},
-    "education": {"education", "academic background"},
-    "experience": {
-        "experience",
-        "work experience",
-        "professional experience",
-        "employment history",
-    },
-    "projects": {"projects", "personal projects", "selected projects"},
-    "certifications": {"certifications", "certificates", "licenses"},
-}
-PROGRAMMING_LANGUAGES = [
-    "Python",
-    "JavaScript",
-    "TypeScript",
-    "Java",
-    "C++",
-    "C#",
-    "C",
-    "Go",
-    "Rust",
-    "Ruby",
-    "PHP",
-    "Swift",
-    "Kotlin",
-    "SQL",
-    "HTML",
-    "CSS",
-]
-FRAMEWORKS_AND_LIBRARIES = [
-    "React",
-    "Next.js",
-    "Node.js",
-    "Express",
-    "FastAPI",
-    "Django",
-    "Flask",
-    "Spring",
-    "Angular",
-    "Vue",
-    "Tailwind",
-    "Pandas",
-    "NumPy",
-]
-TOOLS_AND_PLATFORMS = [
-    "Git",
-    "Docker",
-    "Kubernetes",
-    "AWS",
-    "Azure",
-    "GCP",
-    "PostgreSQL",
-    "MongoDB",
-    "MySQL",
-    "Redis",
-    "Linux",
-    "Jira",
-    "Figma",
-]
+ANALYSIS_VERSION = "deterministic-v2"
 
 
 def _empty_analysis() -> dict[str, Any]:
+    categorized_skills = {
+        "programming_languages": [],
+        "ml_ai": [],
+        "frameworks_libraries": [],
+        "tools_platforms": [],
+        "databases": [],
+        "cloud_devops": [],
+        "other": [],
+    }
     return {
         "metadata": {
             "analysis_version": ANALYSIS_VERSION,
@@ -85,30 +45,19 @@ def _empty_analysis() -> dict[str, Any]:
         "phone": None,
         "summary": None,
         "skills": [],
+        "skills_categorized": categorized_skills,
         "programming_languages": [],
         "frameworks_and_libraries": [],
         "tools_and_platforms": [],
+        "databases": [],
+        "cloud_devops": [],
+        "ml_ai": [],
         "education": [],
         "experience": [],
         "projects": [],
         "certifications": [],
+        "achievements": [],
     }
-
-
-def _clean_line(line: str) -> str:
-    return re.sub(r"\s+", " ", line).strip(" -•\t")
-
-
-def _dedupe(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    deduped: list[str] = []
-    for item in items:
-        cleaned = _clean_line(item)
-        key = cleaned.casefold()
-        if cleaned and key not in seen:
-            seen.add(key)
-            deduped.append(cleaned)
-    return deduped
 
 
 def _normalize_phone(value: str) -> str | None:
@@ -137,10 +86,14 @@ def _extract_contact(text: str) -> tuple[str | None, str | None]:
     return email, phone
 
 
-def _extract_candidate_name(lines: list[str], email: str | None, phone: str | None) -> str | None:
+def _extract_candidate_name(
+    lines: list[str],
+    email: str | None,
+    phone: str | None,
+) -> str | None:
     heading_names = {alias for aliases in SECTION_ALIASES.values() for alias in aliases}
     for line in lines[:8]:
-        cleaned = _clean_line(line)
+        cleaned = clean_line(line)
         if not cleaned:
             continue
         lowered = cleaned.casefold()
@@ -158,81 +111,36 @@ def _extract_candidate_name(lines: list[str], email: str | None, phone: str | No
     return None
 
 
-def _section_key(line: str) -> str | None:
-    normalized = _clean_line(line).rstrip(":").casefold()
-    for key, aliases in SECTION_ALIASES.items():
-        if normalized in aliases:
-            return key
-    return None
-
-
-def _split_sections(lines: list[str]) -> dict[str, list[str]]:
-    sections: dict[str, list[str]] = {key: [] for key in SECTION_ALIASES}
-    current: str | None = None
-    for line in lines:
-        key = _section_key(line)
-        if key:
-            current = key
-            continue
-        if current and _clean_line(line):
-            sections[current].append(_clean_line(line))
-    return sections
-
-
-def _section_text(lines: list[str]) -> str | None:
-    text = "\n".join(_dedupe(lines)).strip()
-    return text or None
-
-
-def _section_items(lines: list[str]) -> list[str]:
-    items: list[str] = []
-    for line in lines:
-        parts = re.split(r"[,;]| \| ", line)
-        if len(parts) > 1:
-            items.extend(parts)
-        else:
-            items.append(line)
-    return _dedupe(items)
-
-
-def _line_items(lines: list[str]) -> list[str]:
-    return _dedupe(lines)
-
-
-def _keyword_matches(text: str, keywords: list[str]) -> list[str]:
-    matches: list[str] = []
-    for keyword in keywords:
-        pattern = rf"(?<![A-Za-z0-9+#.]){re.escape(keyword)}(?![A-Za-z0-9+#.])"
-        if re.search(pattern, text, flags=re.IGNORECASE):
-            matches.append(keyword)
-    return _dedupe(matches)
-
-
 def analyze_resume_text(text: str) -> dict[str, Any]:
     analysis = _empty_analysis()
-    lines = [_clean_line(line) for line in text.splitlines()]
+    lines = [line.strip() for line in text.splitlines()]
     lines = [line for line in lines if line]
-    sections = _split_sections(lines)
+    sections = split_sections(lines)
     email, phone = _extract_contact(text)
 
     analysis["email"] = email
     analysis["phone"] = phone
     analysis["candidate_name"] = _extract_candidate_name(lines, email, phone)
-    analysis["summary"] = _section_text(sections["summary"])
-    analysis["education"] = _line_items(sections["education"])
-    analysis["experience"] = _line_items(sections["experience"])
-    analysis["projects"] = _line_items(sections["projects"])
-    analysis["certifications"] = _line_items(sections["certifications"])
+    analysis["summary"] = section_text(sections["summary"])
+    analysis["education"] = line_items(sections["education"])
+    analysis["experience"] = group_experience(sections["experience"])
+    analysis["projects"] = group_projects(sections["projects"])
+    analysis["certifications"] = certifications_from_sections(
+        sections["certifications"],
+        sections["achievements"],
+    )
+    analysis["achievements"] = line_items(sections["achievements"])
 
-    programming_languages = _keyword_matches(text, PROGRAMMING_LANGUAGES)
-    frameworks = _keyword_matches(text, FRAMEWORKS_AND_LIBRARIES)
-    tools = _keyword_matches(text, TOOLS_AND_PLATFORMS)
-    explicit_skills = _section_items(sections["skills"])
-
-    analysis["programming_languages"] = programming_languages
-    analysis["frameworks_and_libraries"] = frameworks
-    analysis["tools_and_platforms"] = tools
-    analysis["skills"] = _dedupe(explicit_skills + programming_languages + frameworks + tools)
+    skills = extract_skills(text, section_items(sections["skills"]))
+    categorized = skills["categorized"]
+    analysis["skills"] = skills["flat"]
+    analysis["skills_categorized"] = categorized
+    analysis["programming_languages"] = categorized["programming_languages"]
+    analysis["frameworks_and_libraries"] = categorized["frameworks_libraries"]
+    analysis["tools_and_platforms"] = categorized["tools_platforms"]
+    analysis["databases"] = categorized["databases"]
+    analysis["cloud_devops"] = categorized["cloud_devops"]
+    analysis["ml_ai"] = categorized["ml_ai"]
 
     return analysis
 
