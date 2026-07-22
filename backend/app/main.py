@@ -13,6 +13,7 @@ from app.api.interviews import (
     list_interviews_endpoint,
     submit_answer_endpoint,
 )
+from app.api.profile import get_profile_endpoint, patch_profile_endpoint
 from app.api.resumes import list_resumes, upload_resume
 from app.api.resume_analysis import analyze_resume_endpoint
 from app.config import settings
@@ -33,6 +34,8 @@ app.add_api_route("/api/ai/health", ai_health_check, methods=["GET"])
 app.add_api_route("/api/ai/test-generation", test_ai_generation, methods=["POST"])
 app.add_api_route("/api/auth/google", login_with_google, methods=["POST"])
 app.add_api_route("/api/auth/me", read_current_user, methods=["GET"])
+app.add_api_route("/api/profile", get_profile_endpoint, methods=["GET"])
+app.add_api_route("/api/profile", patch_profile_endpoint, methods=["PATCH"])
 app.add_api_route("/api/resumes", list_resumes, methods=["GET"])
 app.add_api_route("/api/resumes", upload_resume, methods=["POST"])
 app.add_api_route(

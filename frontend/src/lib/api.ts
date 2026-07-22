@@ -264,6 +264,67 @@ export type AiGeneration = {
   generated_text: string;
 };
 
+export type ExperienceLevel =
+  | "student"
+  | "fresher"
+  | "junior"
+  | "mid_level"
+  | "senior";
+
+export type ProfileInformation = {
+  full_name: string | null;
+  professional_headline: string | null;
+  target_role: string | null;
+  experience_level: ExperienceLevel | null;
+  bio: string | null;
+};
+
+export type InterviewDefaults = {
+  interview_type: "HR" | "Technical" | "Mixed" | string;
+  difficulty: "Easy" | "Medium" | "Hard" | string;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+};
+
+export type AccountInformation = {
+  email: string;
+  auth_provider: string;
+  created_at: string;
+  profile_picture_url: string | null;
+};
+
+export type ProfileResponse = {
+  profile: ProfileInformation;
+  interview_defaults: InterviewDefaults;
+  account: AccountInformation;
+  profile_completion: number;
+};
+
+export type ProfileUpdatePayload = {
+  profile?: Partial<ProfileInformation>;
+  interview_defaults?: Partial<{
+    interview_type: "HR" | "Technical" | "Mixed";
+    difficulty: "Easy" | "Medium" | "Hard";
+    question_count: number;
+    time_limit_minutes: number | null;
+    evaluation_style: "beginner_friendly" | "balanced" | "strict";
+    answer_mode: "text";
+  }>;
+};
+
+export type ProfileUpdateResult =
+  | {
+      ok: true;
+      profile: ProfileResponse;
+    }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+    };
+
 export async function getBackendHealth(): Promise<BackendHealthStatus> {
   try {
     const response = await fetch(`${apiUrl}/api/health`, {
@@ -313,6 +374,74 @@ export async function getResumes(token?: string): Promise<Resume[]> {
     return Array.isArray(data.resumes) ? data.resumes : [];
   } catch {
     return [];
+  }
+}
+
+export async function getProfile(
+  token?: string,
+): Promise<ProfileResponse | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as ProfileResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateProfile(
+  payload: ProfileUpdatePayload,
+): Promise<ProfileUpdateResult> {
+  try {
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const error = (await response.json().catch(() => ({}))) as {
+        message?: unknown;
+        detail?: unknown;
+      };
+      return {
+        ok: false,
+        status: response.status,
+        message:
+          typeof error.message === "string"
+            ? error.message
+            : typeof error.detail === "string"
+              ? error.detail
+              : "Unable to save profile settings.",
+      };
+    }
+
+    return {
+      ok: true,
+      profile: (await response.json()) as ProfileResponse,
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      message: "Profile service unavailable.",
+    };
   }
 }
 
