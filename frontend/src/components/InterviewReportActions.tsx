@@ -29,6 +29,11 @@ function practiceAgainHref(report: InterviewReport) {
     interview_type: report.interview.interview_type,
     question_count: String(report.interview.question_count),
     evaluation_style: report.interview.evaluation_style,
+    time_limit_minutes:
+      report.interview.time_limit_minutes === null
+        ? ""
+        : String(report.interview.time_limit_minutes),
+    answer_mode: report.interview.answer_mode,
   });
   return `/interviews/start?${params.toString()}`;
 }

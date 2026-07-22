@@ -11,6 +11,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.interview import Interview
     from app.models.resume import Resume
+    from app.models.user_profile import UserProfile
 
 
 class User(Base):
@@ -42,4 +43,10 @@ class User(Base):
     interviews: Mapped[list["Interview"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    profile: Mapped["UserProfile | None"] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        uselist=False,
     )

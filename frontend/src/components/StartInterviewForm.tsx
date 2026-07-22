@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CreatedInterview, Resume } from "@/lib/api";
+import type { CreatedInterview, InterviewDefaults, Resume } from "@/lib/api";
 
 const interviewTypes = ["HR", "Technical", "Mixed"];
 const difficultyLevels = ["Easy", "Medium", "Hard"];
@@ -39,24 +39,51 @@ type StartInterviewFormProps = {
     difficulty?: string;
     interviewType?: string;
     questionCount?: string;
+    timeLimitMinutes?: string;
     evaluationStyle?: string;
+    answerMode?: string;
   };
+  savedDefaults?: InterviewDefaults | null;
+  savedTargetRole?: string | null;
 };
 
-function getInitialQuestionMode(value?: string) {
+function validInterviewType(value?: string | null) {
+  return value && interviewTypes.includes(value) ? value : null;
+}
+
+function validDifficulty(value?: string | null) {
+  return value && difficultyLevels.includes(value) ? value : null;
+}
+
+function validEvaluationStyle(value?: string | null) {
+  return value && evaluationStyles.some((item) => item.value === value)
+    ? value
+    : null;
+}
+
+function validTimeLimit(value?: string | number | null) {
+  const normalized = value === null || value === undefined ? "" : String(value);
+  return timeLimitOptions.some((item) => item.value === normalized)
+    ? normalized
+    : null;
+}
+
+function getInitialQuestionMode(value?: string | number | null) {
   return questionCountPresets.includes(Number(value)) ? String(value) : "10";
 }
 
-function getInitialCustomQuestionCount(value?: string) {
+function getInitialCustomQuestionCount(value?: string | number | null) {
   const count = Number(value);
   if (
-    value &&
+    value !== undefined &&
+    value !== null &&
+    String(value) &&
     Number.isInteger(count) &&
     count >= 5 &&
     count <= 30 &&
     !questionCountPresets.includes(count)
   ) {
-    return value;
+    return String(value);
   }
   return "";
 }
@@ -64,41 +91,48 @@ function getInitialCustomQuestionCount(value?: string) {
 export function StartInterviewForm({
   resumes,
   initialValues,
+  savedDefaults,
+  savedTargetRole,
 }: StartInterviewFormProps) {
   const router = useRouter();
-  const initialRole = initialValues?.role ?? "Software Engineer";
+  const defaultRole = initialValues?.role ?? savedTargetRole ?? "Software Engineer";
   const isInitialCustomRole =
-    Boolean(initialValues?.role) && !targetRoles.includes(initialRole);
+    Boolean(defaultRole) && !targetRoles.includes(defaultRole);
+  const initialQuestionCount =
+    initialValues?.questionCount ?? savedDefaults?.question_count ?? 10;
   const [interviewType, setInterviewType] = useState(
-    initialValues?.interviewType && interviewTypes.includes(initialValues.interviewType)
-      ? initialValues.interviewType
-      : "HR",
+    validInterviewType(initialValues?.interviewType) ??
+      validInterviewType(savedDefaults?.interview_type) ??
+      "HR",
   );
   const [difficulty, setDifficulty] = useState(
-    initialValues?.difficulty && difficultyLevels.includes(initialValues.difficulty)
-      ? initialValues.difficulty
-      : "Easy",
+    validDifficulty(initialValues?.difficulty) ??
+      validDifficulty(savedDefaults?.difficulty) ??
+      "Easy",
   );
   const [targetRole, setTargetRole] = useState(
-    isInitialCustomRole ? "Custom Role" : initialRole,
+    isInitialCustomRole ? "Custom Role" : defaultRole,
   );
   const [customRole, setCustomRole] = useState(
-    isInitialCustomRole ? initialRole : "",
+    isInitialCustomRole ? defaultRole : "",
   );
   const [questionCountMode, setQuestionCountMode] = useState(
-    getInitialCustomQuestionCount(initialValues?.questionCount)
+    getInitialCustomQuestionCount(initialQuestionCount)
       ? "custom"
-      : getInitialQuestionMode(initialValues?.questionCount),
+      : getInitialQuestionMode(initialQuestionCount),
   );
   const [customQuestionCount, setCustomQuestionCount] = useState(
-    getInitialCustomQuestionCount(initialValues?.questionCount),
+    getInitialCustomQuestionCount(initialQuestionCount),
   );
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(
+    validTimeLimit(initialValues?.timeLimitMinutes) ??
+      validTimeLimit(savedDefaults?.time_limit_minutes) ??
+      "",
+  );
   const [evaluationStyle, setEvaluationStyle] = useState(
-    initialValues?.evaluationStyle &&
-      evaluationStyles.some((item) => item.value === initialValues.evaluationStyle)
-      ? initialValues.evaluationStyle
-      : "balanced",
+    validEvaluationStyle(initialValues?.evaluationStyle) ??
+      validEvaluationStyle(savedDefaults?.evaluation_style) ??
+      "balanced",
   );
   const [resumeId, setResumeId] = useState(
     resumes.length === 1 ? resumes[0].id : "",
