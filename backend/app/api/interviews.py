@@ -25,6 +25,10 @@ from app.services.interview_service import (
     submit_answer,
     complete_interview,
 )
+from app.services.interview_report_service import (
+    InterviewReport,
+    get_interview_report,
+)
 
 
 class CreateInterviewRequest(BaseModel):
@@ -154,6 +158,67 @@ class InterviewAnalyticsSummaryResponse(BaseModel):
     most_practised_target_role: str | None
     score_trend: list[ScoreTrendItemResponse]
     average_score_by_type: list[ScoreByTypeResponse]
+
+
+class ReportInterviewResponse(BaseModel):
+    id: UUID
+    target_role: str
+    interview_type: str
+    difficulty: str
+    evaluation_style: str
+    answer_mode: str
+    question_count: int
+    answered_count: int
+    started_at: datetime | None
+    completed_at: datetime | None
+    duration_seconds: int | None
+    time_limit_minutes: int | None
+
+
+class ReportSummaryResponse(BaseModel):
+    overall_score: float | None
+    performance_level: str | None
+    overall_feedback: str | None
+    strengths: list[str]
+    improvements: list[str]
+
+
+class ReportMetricsResponse(BaseModel):
+    average_question_score: float | None
+    completion_rate: float | None
+    answered_questions: int
+    total_questions: int
+
+
+class ReportQuestionResponse(BaseModel):
+    sequence_number: int
+    question_text: str
+    candidate_answer: str | None
+    score: float | None
+    feedback: str | None
+    strength: str | None
+    improvement: str | None
+
+
+class NextInterviewRecommendationResponse(BaseModel):
+    target_role: str
+    difficulty: str
+    interview_type: str
+    question_count: int
+    focus_topics: list[str]
+
+
+class ReportRecommendationsResponse(BaseModel):
+    topics: list[str]
+    next_interview: NextInterviewRecommendationResponse
+
+
+class InterviewReportResponse(BaseModel):
+    interview: ReportInterviewResponse
+    summary: ReportSummaryResponse
+    metrics: ReportMetricsResponse
+    questions: list[ReportQuestionResponse]
+    recommendations: ReportRecommendationsResponse
 
 
 def _score_value(value: object) -> float | None:
@@ -372,6 +437,37 @@ def get_interview_analytics_summary_endpoint(
             )
             for item in summary.average_score_by_type
         ],
+    )
+
+
+def _serialize_interview_report(report: InterviewReport) -> InterviewReportResponse:
+    return InterviewReportResponse(
+        interview=ReportInterviewResponse(**report.interview),
+        summary=ReportSummaryResponse(**report.summary),
+        metrics=ReportMetricsResponse(**report.metrics),
+        questions=[
+            ReportQuestionResponse(
+                sequence_number=question.sequence_number,
+                question_text=question.question_text,
+                candidate_answer=question.candidate_answer,
+                score=question.score,
+                feedback=question.feedback,
+                strength=question.strength,
+                improvement=question.improvement,
+            )
+            for question in report.questions
+        ],
+        recommendations=ReportRecommendationsResponse(**report.recommendations),
+    )
+
+
+def get_interview_report_endpoint(
+    interview_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> InterviewReportResponse:
+    return _serialize_interview_report(
+        get_interview_report(db=db, current_user=current_user, interview_id=interview_id),
     )
 
 

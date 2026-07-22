@@ -34,18 +34,72 @@ const evaluationStyles = [
 
 type StartInterviewFormProps = {
   resumes: Resume[];
+  initialValues?: {
+    role?: string;
+    difficulty?: string;
+    interviewType?: string;
+    questionCount?: string;
+    evaluationStyle?: string;
+  };
 };
 
-export function StartInterviewForm({ resumes }: StartInterviewFormProps) {
+function getInitialQuestionMode(value?: string) {
+  return questionCountPresets.includes(Number(value)) ? String(value) : "10";
+}
+
+function getInitialCustomQuestionCount(value?: string) {
+  const count = Number(value);
+  if (
+    value &&
+    Number.isInteger(count) &&
+    count >= 5 &&
+    count <= 30 &&
+    !questionCountPresets.includes(count)
+  ) {
+    return value;
+  }
+  return "";
+}
+
+export function StartInterviewForm({
+  resumes,
+  initialValues,
+}: StartInterviewFormProps) {
   const router = useRouter();
-  const [interviewType, setInterviewType] = useState("HR");
-  const [difficulty, setDifficulty] = useState("Easy");
-  const [targetRole, setTargetRole] = useState("Software Engineer");
-  const [customRole, setCustomRole] = useState("");
-  const [questionCountMode, setQuestionCountMode] = useState("10");
-  const [customQuestionCount, setCustomQuestionCount] = useState("");
+  const initialRole = initialValues?.role ?? "Software Engineer";
+  const isInitialCustomRole =
+    Boolean(initialValues?.role) && !targetRoles.includes(initialRole);
+  const [interviewType, setInterviewType] = useState(
+    initialValues?.interviewType && interviewTypes.includes(initialValues.interviewType)
+      ? initialValues.interviewType
+      : "HR",
+  );
+  const [difficulty, setDifficulty] = useState(
+    initialValues?.difficulty && difficultyLevels.includes(initialValues.difficulty)
+      ? initialValues.difficulty
+      : "Easy",
+  );
+  const [targetRole, setTargetRole] = useState(
+    isInitialCustomRole ? "Custom Role" : initialRole,
+  );
+  const [customRole, setCustomRole] = useState(
+    isInitialCustomRole ? initialRole : "",
+  );
+  const [questionCountMode, setQuestionCountMode] = useState(
+    getInitialCustomQuestionCount(initialValues?.questionCount)
+      ? "custom"
+      : getInitialQuestionMode(initialValues?.questionCount),
+  );
+  const [customQuestionCount, setCustomQuestionCount] = useState(
+    getInitialCustomQuestionCount(initialValues?.questionCount),
+  );
   const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
-  const [evaluationStyle, setEvaluationStyle] = useState("balanced");
+  const [evaluationStyle, setEvaluationStyle] = useState(
+    initialValues?.evaluationStyle &&
+      evaluationStyles.some((item) => item.value === initialValues.evaluationStyle)
+      ? initialValues.evaluationStyle
+      : "balanced",
+  );
   const [resumeId, setResumeId] = useState(
     resumes.length === 1 ? resumes[0].id : "",
   );

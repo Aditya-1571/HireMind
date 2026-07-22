@@ -9,6 +9,7 @@ from app.api.interviews import (
     create_interview_endpoint,
     get_interview_endpoint,
     get_interview_analytics_summary_endpoint,
+    get_interview_report_endpoint,
     list_interviews_endpoint,
     submit_answer_endpoint,
 )
@@ -44,6 +45,11 @@ app.add_api_route("/api/interviews", create_interview_endpoint, methods=["POST"]
 app.add_api_route(
     "/api/interviews/analytics/summary",
     get_interview_analytics_summary_endpoint,
+    methods=["GET"],
+)
+app.add_api_route(
+    "/api/interviews/{interview_id}/report",
+    get_interview_report_endpoint,
     methods=["GET"],
 )
 app.add_api_route(

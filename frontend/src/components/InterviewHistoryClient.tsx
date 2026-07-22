@@ -339,8 +339,8 @@ export function InterviewHistoryClient() {
                   className="inline-flex w-fit rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
                 >
                   {interview.status === "completed"
-                    ? "View result"
-                    : "Continue"}
+                    ? "View Report"
+                    : "Continue Interview"}
                 </Link>
               </article>
             ))}

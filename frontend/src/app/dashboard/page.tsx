@@ -293,8 +293,8 @@ export default async function DashboardPage() {
                       className="font-medium text-neutral-950 hover:underline"
                     >
                       {interview.status === "completed"
-                        ? "View result"
-                        : "Continue"}
+                        ? "View Report"
+                        : "Continue Interview"}
                     </Link>
                   </div>
                 </div>
