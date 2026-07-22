@@ -25,3 +25,31 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #171717 !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .report-print-area {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .report-question {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

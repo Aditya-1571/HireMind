@@ -146,6 +146,68 @@ export type CompletedInterview = Interview & {
   evaluation_source: "ai" | "fallback";
 };
 
+export type InterviewReportQuestion = {
+  sequence_number: number;
+  question_text: string;
+  candidate_answer: string | null;
+  score: number | null;
+  feedback: string | null;
+  strength: string | null;
+  improvement: string | null;
+};
+
+export type InterviewReport = {
+  interview: {
+    id: string;
+    target_role: string;
+    interview_type: string;
+    difficulty: string;
+    evaluation_style: string;
+    answer_mode: string;
+    question_count: number;
+    answered_count: number;
+    started_at: string | null;
+    completed_at: string | null;
+    duration_seconds: number | null;
+    time_limit_minutes: number | null;
+  };
+  summary: {
+    overall_score: number | null;
+    performance_level: string | null;
+    overall_feedback: string | null;
+    strengths: string[];
+    improvements: string[];
+  };
+  metrics: {
+    average_question_score: number | null;
+    completion_rate: number | null;
+    answered_questions: number;
+    total_questions: number;
+  };
+  questions: InterviewReportQuestion[];
+  recommendations: {
+    topics: string[];
+    next_interview: {
+      target_role: string;
+      difficulty: string;
+      interview_type: string;
+      question_count: number;
+      focus_topics: string[];
+    };
+  };
+};
+
+export type InterviewReportResult =
+  | {
+      ok: true;
+      report: InterviewReport;
+    }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+    };
+
 export type InterviewListResponse = {
   interviews: InterviewSummary[];
   page: number;
@@ -358,6 +420,55 @@ export async function getInterview(
     return (await response.json()) as Interview;
   } catch {
     return null;
+  }
+}
+
+export async function getInterviewReport(
+  token: string | undefined,
+  interviewId: string,
+): Promise<InterviewReportResult> {
+  if (!token) {
+    return { ok: false, status: 401, message: "Unauthorized" };
+  }
+
+  try {
+    const response = await fetch(
+      `${apiUrl}/api/interviews/${interviewId}/report`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      const error = (await response.json().catch(() => ({}))) as {
+        detail?: unknown;
+        message?: unknown;
+      };
+      return {
+        ok: false,
+        status: response.status,
+        message:
+          typeof error.detail === "string"
+            ? error.detail
+            : typeof error.message === "string"
+              ? error.message
+              : "Unable to load interview report.",
+      };
+    }
+
+    return {
+      ok: true,
+      report: (await response.json()) as InterviewReport,
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      message: "Interview report service unavailable.",
+    };
   }
 }
 
