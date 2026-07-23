@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { AuthUser } from "@/lib/auth";
 import { HireMindLogo } from "@/components/HireMindLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { fetchWithTimeout } from "@/lib/errors";
 
 type SidebarProps = {
   user?: AuthUser | null;
@@ -76,14 +77,30 @@ export function Sidebar({ user }: SidebarProps) {
     return () => window.removeEventListener("popstate", syncTab);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileOpen]);
+
   const signOut = async () => {
     if (isSigningOut) {
       return;
     }
     setIsSigningOut(true);
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetchWithTimeout("/api/auth/logout", { method: "POST" }, 15000);
+    } finally {
+      router.push("/login");
+      router.refresh();
+    }
   };
 
   const nav = (
@@ -178,7 +195,7 @@ export function Sidebar({ user }: SidebarProps) {
             disabled={isSigningOut}
             className="mt-3 w-full rounded-xl border border-slate-200/80 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-400 dark:border-slate-700/70 dark:bg-slate-950/30 dark:text-slate-200 dark:hover:border-red-400/30 dark:hover:bg-red-950/25 dark:hover:text-red-200"
           >
-            {isSigningOut ? "Signing out..." : "Sign out"}
+            {isSigningOut ? "Signing out" : "Sign out"}
           </button>
         </div>
       </div>
@@ -197,7 +214,8 @@ export function Sidebar({ user }: SidebarProps) {
             onClick={() => setMobileOpen((open) => !open)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-sidebar"
-            className="rounded-xl border border-slate-200/80 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="rounded-xl border border-slate-200/80 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950"
           >
             {mobileOpen ? "Close" : "Menu"}
           </button>
@@ -211,6 +229,9 @@ export function Sidebar({ user }: SidebarProps) {
       {mobileOpen ? (
         <div
           id="mobile-sidebar"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
           className="print-hidden fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm md:hidden"
         >
           <div className="flex h-full w-[min(22rem,88vw)] flex-col border-r border-slate-200/70 bg-white/95 shadow-2xl shadow-blue-950/20 dark:border-slate-800 dark:bg-slate-950/95">

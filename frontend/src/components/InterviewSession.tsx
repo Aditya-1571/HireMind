@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompletedInterview, Interview } from "@/lib/api";
 import { Alert, Badge, Button, Card, fieldClassName } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 type InterviewSessionProps = {
   initialInterview: Interview;
@@ -93,28 +99,35 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
 
     setIsCompleting(true);
     setMessage(null);
-    const response = await fetch(`/api/interviews/${interview.id}/complete`, {
-      method: "POST",
-    });
+    try {
+      const response = await fetchWithTimeout(`/api/interviews/${interview.id}/complete`, {
+        method: "POST",
+      }, 120000);
 
-    if (!response.ok) {
-      const error = (await response.json().catch(() => ({}))) as {
-        message?: unknown;
-      };
-      setMessage(
-        typeof error.message === "string"
-          ? error.message
-          : "Unable to complete interview.",
+      if (!response.ok) {
+        setMessage(
+          await responseErrorMessage(response, "Unable to complete interview."),
+        );
+        setIsCompleting(false);
+        return;
+      }
+
+      const completedInterview =
+        await readJsonSafely<CompletedInterview>(response);
+      if (!completedInterview?.evaluation_source) {
+        setMessage("Interview evaluation returned an invalid response.");
+        setIsCompleting(false);
+        return;
+      }
+
+      router.push(
+        `/interviews/${interview.id}/complete?source=${completedInterview.evaluation_source}`,
       );
+      router.refresh();
+    } catch {
+      setMessage(networkErrorMessage("Interview evaluation is unavailable."));
       setIsCompleting(false);
-      return;
     }
-
-    const completedInterview = (await response.json()) as CompletedInterview;
-    router.push(
-      `/interviews/${interview.id}/complete?source=${completedInterview.evaluation_source}`,
-    );
-    router.refresh();
   };
 
   const submitAnswer = async () => {
@@ -126,7 +139,7 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/interviews/${interview.id}/answers`, {
+      const response = await fetchWithTimeout(`/api/interviews/${interview.id}/answers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,22 +148,20 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
           question_id: currentQuestion.id,
           answer,
         }),
-      });
+      }, 45000);
 
       if (!response.ok) {
-        const error = (await response.json().catch(() => ({}))) as {
-          message?: unknown;
-        };
-        setMessage(
-          typeof error.message === "string"
-            ? error.message
-            : "Unable to submit answer.",
-        );
+        setMessage(await responseErrorMessage(response, "Unable to submit answer."));
         setIsSubmitting(false);
         return;
       }
 
-      const updatedInterview = (await response.json()) as Interview;
+      const updatedInterview = await readJsonSafely<Interview>(response);
+      if (!updatedInterview?.id || !Array.isArray(updatedInterview.questions)) {
+        setMessage("Interview service returned an invalid response.");
+        setIsSubmitting(false);
+        return;
+      }
       setInterview(updatedInterview);
       setAnswer("");
 
@@ -158,7 +169,7 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
         await completeInterview();
       }
     } catch {
-      setMessage("Interview service is unavailable.");
+      setMessage(networkErrorMessage("Interview service is unavailable."));
     } finally {
       setIsSubmitting(false);
     }
@@ -242,15 +253,20 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
             disabled={isSubmitting || isCompleting}
+            maxLength={10000}
             rows={8}
             className={`mt-2 min-h-48 ${fieldClassName}`}
           />
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {answer.length}/10000 characters
+          </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button
               onClick={submitAnswer}
               disabled={isSubmitting || isCompleting || !answer.trim()}
+              loading={isSubmitting}
             >
-              {isSubmitting ? "Submitting..." : "Submit answer"}
+              {isSubmitting ? "Submitting answer" : "Submit answer"}
             </Button>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {interview.answered_count} answered
@@ -266,8 +282,13 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
               ? "Evaluating your interview responses..."
               : "All questions have been answered."}
           </p>
-          <Button className="mt-4" onClick={completeInterview} disabled={isCompleting}>
-            {isCompleting ? "Evaluating..." : "View report"}
+          <Button
+            className="mt-4"
+            onClick={completeInterview}
+            disabled={isCompleting}
+            loading={isCompleting}
+          >
+            {isCompleting ? "Evaluating responses" : "View report"}
           </Button>
         </div>
       ) : null}

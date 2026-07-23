@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 declare global {
   interface Window {
@@ -49,24 +54,16 @@ export function GoogleLoginButton() {
       setMessage(null);
 
       try {
-        const loginResponse = await fetch("/api/auth/google", {
+        const loginResponse = await fetchWithTimeout("/api/auth/google", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ credential: response.credential }),
-        });
+        }, 45000);
 
         if (!loginResponse.ok) {
-          const error = (await loginResponse.json().catch(() => ({}))) as {
-            message?: unknown;
-          };
-
-          setMessage(
-            typeof error.message === "string"
-              ? error.message
-              : "Google sign-in failed.",
-          );
+          setMessage(await responseErrorMessage(loginResponse, "Google sign-in failed."));
           setIsSigningIn(false);
           return;
         }
@@ -74,7 +71,7 @@ export function GoogleLoginButton() {
         router.push("/dashboard");
         router.refresh();
       } catch {
-        setMessage("Google sign-in is unavailable.");
+        setMessage(networkErrorMessage("Google sign-in is unavailable."));
         setIsSigningIn(false);
       }
     };
@@ -129,9 +126,19 @@ export function GoogleLoginButton() {
 
   return (
     <div>
-      <div ref={buttonRef} className="mt-6 min-h-11" />
+      <div
+        ref={buttonRef}
+        className="mt-6 min-h-11"
+        aria-label="Sign in with Google"
+      />
       {isSigningIn ? (
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Signing in...</p>
+        <p
+          className="mt-3 text-sm text-slate-600 dark:text-slate-300"
+          role="status"
+          aria-live="polite"
+        >
+          Signing in
+        </p>
       ) : null}
       {!googleClientId ? (
         <p className="mt-3 text-sm text-red-600 dark:text-red-300">

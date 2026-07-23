@@ -1,0 +1,56 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  backend:
+    name: Compile, test, and import
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      BACKEND_APP_ENV: development
+      DATABASE_URL: sqlite:///./ci.db
+      GOOGLE_CLIENT_ID: test-google-client-id.apps.googleusercontent.com
+      SESSION_SECRET: ci-only-session-secret-value-please-replace
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000"]'
+      BACKEND_TRUSTED_HOSTS: '["localhost","127.0.0.1","testserver"]'
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
+      OLLAMA_MODEL: qwen2.5:1.5b
+      OLLAMA_TIMEOUT_SECONDS: "5"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile backend
+        run: python -m compileall app
+
+      - name: Run tests
+        run: python -m unittest discover -s tests
+
+      - name: Import application
+        run: python -c "from app.main import app; print(app.title)"

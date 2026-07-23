@@ -46,13 +46,57 @@ const steps = [
   "Review feedback and plan the next practice",
 ];
 
+const siteUrl = (process.env.SITE_URL ?? "http://localhost:3000").replace(
+  /\/+$/,
+  "",
+);
+
 export default async function Home() {
   const user = await getCurrentUser();
   const startHref = user ? "/interviews/start" : "/login";
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "HireMind",
+      applicationCategory: "EducationalApplication",
+      operatingSystem: "Web",
+      description:
+        "AI interview preparation with resume-aware questions, answer evaluation, reports, and performance history.",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "HireMind",
+      url: siteUrl,
+      logo: `${siteUrl}/icon.svg`,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "HireMind",
+      url: siteUrl,
+      description:
+        "A focused workspace for interview practice, AI feedback, reports, and preparation history.",
+    },
+  ];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#050816] text-slate-50">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-screen overflow-hidden bg-[#050816] text-slate-50"
+    >
       <Header />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <section className="hiremind-ambient relative px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="premium-grid absolute inset-0 opacity-45" aria-hidden="true" />
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">

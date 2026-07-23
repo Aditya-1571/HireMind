@@ -1,25 +1,49 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Alert, Button } from "@/components/ui";
+import { fetchWithTimeout } from "@/lib/errors";
 
 export function LogoutButton() {
   const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-    });
-    router.push("/login");
-    router.refresh();
+    if (isSigningOut) {
+      return;
+    }
+    setIsSigningOut(true);
+    setError(null);
+    try {
+      const response = await fetchWithTimeout("/api/auth/logout", {
+        method: "POST",
+      }, 15000);
+      if (!response.ok) {
+        setError("Unable to sign out.");
+        setIsSigningOut(false);
+        return;
+      }
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setError("Unable to sign out.");
+      setIsSigningOut(false);
+    }
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleLogout}
-      className="rounded-xl border border-slate-200/80 bg-white/80 px-3 py-2 text-sm font-medium text-slate-800 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700/70 dark:bg-slate-900/55 dark:text-slate-100 dark:hover:border-cyan-400/50 dark:hover:bg-slate-800/75"
-    >
-      Logout
-    </button>
+    <div className="space-y-3">
+      <Button
+        onClick={handleLogout}
+        variant="secondary"
+        loading={isSigningOut}
+        disabled={isSigningOut}
+      >
+        {isSigningOut ? "Signing out" : "Logout"}
+      </Button>
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+    </div>
   );
 }

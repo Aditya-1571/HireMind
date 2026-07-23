@@ -5,6 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { InterviewListResponse } from "@/lib/api";
 import { Badge, Button, Card, EmptyState, fieldClassName } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 const statusOptions = [
   { value: "", label: "All statuses" },
@@ -33,15 +38,17 @@ const sortOptions = [
   { value: "lowest_score", label: "Lowest score" },
 ];
 
+const dateTimeFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 function formatDate(value: string | null) {
   if (!value) {
     return "Not available";
   }
 
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTimeFormatter.format(new Date(value));
 }
 
 function emptyResponse(): InterviewListResponse {
@@ -84,21 +91,20 @@ export function InterviewHistoryClient() {
   useEffect(() => {
     let ignore = false;
 
-    fetch(`/api/interviews${queryString ? `?${queryString}` : ""}`, {
+    fetchWithTimeout(`/api/interviews${queryString ? `?${queryString}` : ""}`, {
       cache: "no-store",
-    })
+    }, 30000)
       .then(async (response) => {
         if (!response.ok) {
-          const payload = (await response.json().catch(() => ({}))) as {
-            message?: unknown;
-          };
           throw new Error(
-            typeof payload.message === "string"
-              ? payload.message
-              : "Unable to load interview history.",
+            await responseErrorMessage(response, "Unable to load interview history."),
           );
         }
-        return response.json() as Promise<InterviewListResponse>;
+        const payload = await readJsonSafely<InterviewListResponse>(response);
+        if (!payload || !Array.isArray(payload.interviews)) {
+          throw new Error("Interview history returned an invalid response.");
+        }
+        return payload;
       })
       .then((payload) => {
         if (!ignore) {

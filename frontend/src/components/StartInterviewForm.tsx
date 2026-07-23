@@ -4,6 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CreatedInterview, Resume } from "@/lib/api";
 import { Alert, Button, Card, fieldClassName } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 const interviewTypes = ["HR", "Technical", "Mixed"];
 const difficultyLevels = ["Easy", "Medium", "Hard"];
@@ -168,7 +174,7 @@ export function StartInterviewForm({
     setMessage(null);
 
     try {
-      const response = await fetch("/api/interviews", {
+      const response = await fetchWithTimeout("/api/interviews", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,26 +190,24 @@ export function StartInterviewForm({
           evaluation_style: evaluationStyle,
           answer_mode: "text",
         }),
-      });
+      }, 90000);
 
       if (!response.ok) {
-        const error = (await response.json().catch(() => ({}))) as {
-          message?: unknown;
-        };
-        setMessage(
-          typeof error.message === "string"
-            ? error.message
-            : "Unable to start interview.",
-        );
+        setMessage(await responseErrorMessage(response, "Unable to start interview."));
         setIsStarting(false);
         return;
       }
 
-      const interview = (await response.json()) as CreatedInterview;
+      const interview = await readJsonSafely<CreatedInterview>(response);
+      if (!interview?.id) {
+        setMessage("Interview service returned an invalid response.");
+        setIsStarting(false);
+        return;
+      }
       router.push(`/interviews/${interview.id}`);
       router.refresh();
     } catch {
-      setMessage("Interview service is unavailable.");
+      setMessage(networkErrorMessage("Interview service is unavailable."));
       setIsStarting(false);
     }
   };
@@ -443,7 +447,7 @@ export function StartInterviewForm({
             loading={isStarting}
             size="lg"
           >
-            {isStarting ? "Generating..." : "Start interview"}
+            {isStarting ? "Generating questions" : "Start interview"}
           </Button>
           {isStarting ? (
             <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">

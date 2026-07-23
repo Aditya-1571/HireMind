@@ -1,10 +1,20 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { InterviewHistoryClient } from "@/components/InterviewHistoryClient";
+import dynamic from "next/dynamic";
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Skeleton } from "@/components/ui";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
+
+const InterviewHistoryClient = dynamic(
+  () =>
+    import("@/components/InterviewHistoryClient").then(
+      (module) => module.InterviewHistoryClient,
+    ),
+  {
+    loading: () => <HistoryFallback />,
+  },
+);
 
 export default async function InterviewHistoryPage() {
   const [user, token] = await Promise.all([getCurrentUser(), getSessionToken()]);
@@ -24,16 +34,32 @@ export default async function InterviewHistoryPage() {
         />
 
         <Suspense
-          fallback={
-            <section className="mt-6 rounded-2xl border border-slate-200/75 bg-white/80 p-6 shadow-sm dark:border-slate-700/55 dark:bg-slate-900/58">
-              <div className="h-4 w-40 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
-              <div className="mt-4 h-20 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
-            </section>
-          }
+          fallback={<HistoryFallback />}
         >
           <InterviewHistoryClient />
         </Suspense>
       </PageContainer>
     </div>
+  );
+}
+
+function HistoryFallback() {
+  return (
+    <section
+      aria-label="Loading interview history"
+      className="mt-6 rounded-2xl border border-slate-200/75 bg-white/80 p-6 shadow-sm dark:border-slate-700/55 dark:bg-slate-900/58"
+    >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <Skeleton className="h-16" />
+        <Skeleton className="h-16" />
+        <Skeleton className="h-16" />
+        <Skeleton className="h-16" />
+        <Skeleton className="h-16" />
+      </div>
+      <div className="mt-6 space-y-3">
+        <Skeleton className="h-20" />
+        <Skeleton className="h-20" />
+      </div>
+    </section>
   );
 }

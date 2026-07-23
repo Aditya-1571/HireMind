@@ -3,6 +3,12 @@
 import { useState } from "react";
 import type { AiGeneration, AiHealth } from "@/lib/api";
 import { Alert, Badge, Button, Card } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 type OllamaStatusPanelProps = {
   health: AiHealth;
@@ -29,25 +35,23 @@ export function OllamaStatusPanel({ health }: OllamaStatusPanelProps) {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/ai/test-generation", {
+      const response = await fetchWithTimeout("/api/ai/test-generation", {
         method: "POST",
-      });
+      }, 70000);
 
       if (!response.ok) {
-        const error = (await response.json().catch(() => ({}))) as {
-          message?: unknown;
-        };
-        setMessage(
-          typeof error.message === "string"
-            ? error.message
-            : "AI test unavailable.",
-        );
+        setMessage(await responseErrorMessage(response, "AI test unavailable."));
         return;
       }
 
-      setResult((await response.json()) as AiGeneration);
+      const payload = await readJsonSafely<AiGeneration>(response);
+      if (!payload?.generated_text) {
+        setMessage("AI test returned an invalid response.");
+        return;
+      }
+      setResult(payload);
     } catch {
-      setMessage("AI test unavailable.");
+      setMessage(networkErrorMessage("AI test unavailable."));
     } finally {
       setIsTesting(false);
     }
@@ -71,8 +75,9 @@ export function OllamaStatusPanel({ health }: OllamaStatusPanelProps) {
         <Button
           onClick={testAi}
           disabled={isTesting || !health.ollama_reachable || !health.model_available}
+          loading={isTesting}
         >
-          {isTesting ? "Testing..." : "Test AI"}
+          {isTesting ? "Testing AI" : "Test AI"}
         </Button>
       </div>
       {result ? (

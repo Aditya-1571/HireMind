@@ -18,6 +18,7 @@ const options = [
 
 export function AppearanceSettingsPanel() {
   const { theme, setTheme } = useTheme();
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
     <Card className="p-6">
@@ -45,6 +46,17 @@ export function AppearanceSettingsPanel() {
               role="radio"
               aria-checked={selected}
               onClick={() => setTheme(option.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "ArrowLeft" ||
+                  event.key === "ArrowRight" ||
+                  event.key === "ArrowUp" ||
+                  event.key === "ArrowDown"
+                ) {
+                  event.preventDefault();
+                  toggleTheme();
+                }
+              }}
               className={
                 selected
                   ? "rounded-2xl border border-blue-400/50 bg-gradient-to-br from-blue-600/12 to-fuchsia-500/12 p-4 text-left shadow-sm shadow-blue-950/10 ring-2 ring-blue-500/30 dark:border-cyan-300/40 dark:ring-cyan-300/20"
@@ -89,12 +101,22 @@ export function AppearanceSettingsPanel() {
                 <span
                   className={
                     selected
-                      ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-fuchsia-500 text-[10px] text-white"
+                      ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-fuchsia-500 text-white"
                       : "h-5 w-5 shrink-0 rounded-full border border-slate-300 dark:border-slate-600"
                   }
                   aria-hidden="true"
                 >
-                  {selected ? "✓" : ""}
+                  {selected ? (
+                    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
+                      <path
+                        d="m2.5 6 2.2 2.2 4.8-5"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                    </svg>
+                  ) : null}
                 </span>
               </span>
             </button>

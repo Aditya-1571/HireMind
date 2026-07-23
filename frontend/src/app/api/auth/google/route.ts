@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { sessionCookieName } from "@/lib/auth";
+import { readRequestJson } from "@/lib/routeErrors";
+import { getBackendApiUrl } from "@/lib/serverConfig";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const apiUrl = getBackendApiUrl();
 
 type LoginResponse = {
   session_token: string;
@@ -16,7 +18,11 @@ type ErrorResponse = {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { credential?: unknown };
+    const parsed = await readRequestJson(request);
+    if (!parsed.ok) {
+      return parsed.response;
+    }
+    const body = parsed.body as { credential?: unknown };
 
     if (typeof body.credential !== "string") {
       return NextResponse.json({ message: "Missing credential" }, { status: 400 });

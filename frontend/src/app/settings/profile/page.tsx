@@ -1,11 +1,21 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { PageContainer } from "@/components/PageContainer";
-import { SettingsClient } from "@/components/SettingsClient";
 import { Sidebar } from "@/components/Sidebar";
-import { EmptyState, LinkButton, PageHeader } from "@/components/ui";
+import { EmptyState, LinkButton, PageHeader, Skeleton } from "@/components/ui";
 import { getProfile } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
+
+const SettingsClient = dynamic(
+  () =>
+    import("@/components/SettingsClient").then(
+      (module) => module.SettingsClient,
+    ),
+  {
+    loading: () => <SettingsFallback />,
+  },
+);
 
 export default async function ProfileSettingsPage() {
   const [user, token] = await Promise.all([getCurrentUser(), getSessionToken()]);
@@ -46,8 +56,8 @@ export default async function ProfileSettingsPage() {
 function SettingsFallback() {
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
-      <div className="h-64 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
-      <div className="h-96 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
+      <Skeleton className="h-64" />
+      <Skeleton className="h-96" />
     </div>
   );
 }
