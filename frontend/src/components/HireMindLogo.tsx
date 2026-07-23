@@ -3,6 +3,7 @@ type HireMindLogoProps = {
   size?: "sm" | "md" | "lg";
   subtitle?: boolean;
   className?: string;
+  tone?: "gradient" | "mono";
 };
 
 const sizes = {
@@ -28,6 +29,7 @@ export function HireMindLogo({
   size = "md",
   subtitle = false,
   className = "",
+  tone = "gradient",
 }: HireMindLogoProps) {
   const selected = sizes[size];
 
@@ -49,32 +51,21 @@ export function HireMindLogo({
               <stop offset="0.45" stopColor="#2563EB" />
               <stop offset="1" stopColor="#A855F7" />
             </linearGradient>
-            <linearGradient id="hiremind-logo-shine" x1="14" y1="10" x2="50" y2="54">
-              <stop stopColor="#F8FAFC" stopOpacity="0.88" />
-              <stop offset="1" stopColor="#F8FAFC" stopOpacity="0.2" />
-            </linearGradient>
           </defs>
           <rect
             width="64"
             height="64"
-            rx="18"
-            fill="url(#hiremind-logo-gradient)"
+            rx="16"
+            fill={tone === "gradient" ? "url(#hiremind-logo-gradient)" : "currentColor"}
           />
           <path
-            d="M16 46V18h8v10h16V18h8v28h-8V35H24v11h-8Z"
-            fill="url(#hiremind-logo-shine)"
+            d="M15 46V18h10v10h14V18h10v28H39V36H25v10H15Z"
+            fill="#F8FAFC"
           />
           <path
-            d="M27 46V28l5 5 5-5v18h-6v-7l-4 4-4-4v7h4Z"
+            d="M25 46V31l7 7 7-7v15h-7v-5l-7-7v12h-7Z"
             fill="#EEF2FF"
-            opacity="0.96"
-          />
-          <path
-            d="M14 15h36"
-            stroke="#FFFFFF"
-            strokeOpacity="0.42"
-            strokeWidth="2"
-            strokeLinecap="round"
+            opacity="0.98"
           />
         </svg>
       </span>

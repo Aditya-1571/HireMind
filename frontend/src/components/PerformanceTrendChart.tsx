@@ -23,6 +23,10 @@ export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
     return { x, y, item };
   });
   const polyline = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const area =
+    points.length > 0
+      ? `0,${height} ${polyline} ${width},${height}`
+      : "";
 
   return (
     <div>
@@ -32,6 +36,17 @@ export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
         viewBox={`0 0 ${width} ${height}`}
         className="h-32 w-full overflow-visible"
       >
+        <defs>
+          <linearGradient id="score-trend-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop stopColor="#22D3EE" stopOpacity="0.24" />
+            <stop offset="1" stopColor="#A855F7" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="score-trend-stroke" x1="0" y1="0" x2="1" y2="0">
+            <stop stopColor="#2563EB" />
+            <stop offset="0.55" stopColor="#22D3EE" />
+            <stop offset="1" stopColor="#A855F7" />
+          </linearGradient>
+        </defs>
         <line
           x1="0"
           x2={width}
@@ -40,10 +55,11 @@ export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
           stroke="currentColor"
           className="text-slate-200 dark:text-slate-800"
         />
+        <polygon points={area} fill="url(#score-trend-fill)" />
         <polyline
           fill="none"
           points={polyline}
-          stroke="currentColor"
+          stroke="url(#score-trend-stroke)"
           strokeWidth="3"
           className="text-blue-600 dark:text-cyan-300"
         />

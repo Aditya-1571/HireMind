@@ -1,6 +1,6 @@
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Skeleton } from "@/components/ui";
 
 export default function ProfileSettingsLoading() {
   return (
@@ -12,6 +12,10 @@ export default function ProfileSettingsLoading() {
           title="Profile & Settings"
           description="Loading profile settings..."
         />
+        <div className="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-[32rem]" />
+        </div>
       </PageContainer>
     </div>
   );

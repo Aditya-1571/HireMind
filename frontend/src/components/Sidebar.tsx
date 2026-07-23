@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AuthUser } from "@/lib/auth";
 import { HireMindLogo } from "@/components/HireMindLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -31,13 +31,19 @@ const navigationGroups = [
     label: "Profile",
     items: [
       { href: "/settings/profile", label: "Settings", icon: SettingsIcon },
-      { href: "/settings/profile#account", label: "Account", icon: AccountIcon },
+      { href: "/settings/profile?tab=account", label: "Account", icon: AccountIcon },
     ],
   },
 ];
 
-function isActive(pathname: string, href: string) {
-  if (href.includes("#")) {
+function isActive(pathname: string, href: string, settingsTab: string | null) {
+  if (href === "/settings/profile") {
+    return pathname === "/settings/profile" && settingsTab !== "account";
+  }
+  if (href === "/settings/profile?tab=account") {
+    return pathname === "/settings/profile" && settingsTab === "account";
+  }
+  if (href.includes("?") || href.includes("#")) {
     return false;
   }
   const [path] = href.split("#");
@@ -57,8 +63,18 @@ function initials(user?: AuthUser | null) {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [settingsTab, setSettingsTab] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  useEffect(() => {
+    const syncTab = () => {
+      setSettingsTab(new URLSearchParams(window.location.search).get("tab"));
+    };
+    syncTab();
+    window.addEventListener("popstate", syncTab);
+    return () => window.removeEventListener("popstate", syncTab);
+  }, [pathname]);
 
   const signOut = async () => {
     if (isSigningOut) {
@@ -90,14 +106,19 @@ export function Sidebar({ user }: SidebarProps) {
             </p>
             <div className="mt-2 space-y-1">
               {group.items.map((item) => {
-                const active = isActive(pathname, item.href);
+                const active = isActive(pathname, item.href, settingsTab);
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => {
+                      setSettingsTab(
+                        item.href.includes("tab=account") ? "account" : null,
+                      );
+                      setMobileOpen(false);
+                    }}
                     className={
                       active
                         ? "flex items-center gap-3 rounded-xl border border-blue-400/25 bg-gradient-to-r from-blue-600 to-fuchsia-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-950/25"
@@ -126,7 +147,7 @@ export function Sidebar({ user }: SidebarProps) {
 
         <div className="rounded-2xl border border-slate-200/75 bg-white/80 p-3 shadow-sm shadow-blue-950/[0.04] dark:border-slate-700/55 dark:bg-slate-900/55 dark:shadow-none">
           <Link
-            href="/settings/profile#account"
+            href="/settings/profile?tab=account"
             onClick={() => setMobileOpen(false)}
             className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-300"
           >

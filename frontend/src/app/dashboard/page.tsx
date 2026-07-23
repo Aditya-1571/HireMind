@@ -92,7 +92,7 @@ export default async function DashboardPage() {
   return (
     <div className="hiremind-ambient min-h-screen md:flex">
       <Sidebar user={user} />
-      <PageContainer className="py-8">
+      <PageContainer className="py-10">
         <PageHeader
           eyebrow="Dashboard"
           title={user ? `Welcome, ${user.name}` : "Welcome to HireMind"}
@@ -104,13 +104,13 @@ export default async function DashboardPage() {
           }
         />
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className="mt-8 grid gap-5 sm:grid-cols-3">
           {stats.map((stat) => (
             <StatCard key={stat.label} label={stat.label} value={stat.value} />
           ))}
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Completed" value={String(analytics?.completed_interviews ?? 0)} />
           <StatCard label="In Progress" value={String(analytics?.in_progress_interviews ?? 0)} />
           <StatCard
@@ -133,17 +133,17 @@ export default async function DashboardPage() {
           />
         </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+        <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          <Card className="p-7">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-slate-950 dark:text-slate-50">
               Score Trend
             </h2>
             <div className="mt-5">
               <PerformanceTrendChart items={analytics?.score_trend ?? []} />
             </div>
           </Card>
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+          <Card className="p-7">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-slate-950 dark:text-slate-50">
               Practice Focus
             </h2>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
@@ -183,10 +183,10 @@ export default async function DashboardPage() {
 
         <OllamaStatusPanel health={aiHealth} />
 
-        <Card id="resume" className="mt-6 scroll-mt-6 p-6">
+        <Card id="resume" className="mt-8 scroll-mt-6 p-7">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-slate-950 dark:text-slate-50">
                 Resume Upload
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -235,8 +235,8 @@ export default async function DashboardPage() {
           ) : null}
         </Card>
 
-        <Card className="mt-6 p-6">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+        <Card className="mt-8 p-7">
+          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-slate-950 dark:text-slate-50">
             Recent Interviews
           </h2>
           {recentInterviews.interviews.length > 0 ? (

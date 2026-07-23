@@ -13,7 +13,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       onClick={toggleTheme}
       aria-label={label}
       title={label}
-      className="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-white/75 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm shadow-blue-950/[0.03] transition hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-slate-700/70 dark:bg-slate-900/45 dark:text-slate-200 dark:shadow-none dark:hover:border-cyan-400/50 dark:hover:bg-slate-800/75 dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950"
+      className="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-white/75 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm shadow-blue-950/[0.03] transition hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-slate-700/70 dark:bg-[#111A38]/70 dark:text-slate-200 dark:shadow-none dark:hover:border-cyan-400/50 dark:hover:bg-[#151F43] dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950"
     >
       <span className="flex items-center gap-2">
         <span
@@ -43,7 +43,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact ? (
         <span className="text-xs text-slate-500 dark:text-slate-400">
-          {isDark ? "On" : "On"}
+          {isDark ? "Moon" : "Sun"}
         </span>
       ) : null}
     </button>

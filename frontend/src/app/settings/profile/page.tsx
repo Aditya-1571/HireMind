@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { AccountInformationCard } from "@/components/AccountInformationCard";
+import { Suspense } from "react";
 import { PageContainer } from "@/components/PageContainer";
-import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
+import { SettingsClient } from "@/components/SettingsClient";
 import { Sidebar } from "@/components/Sidebar";
 import { EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { getProfile } from "@/lib/api";
@@ -23,17 +23,13 @@ export default async function ProfileSettingsPage() {
         <PageHeader
           eyebrow="Settings"
           title="Profile & Settings"
-          description="Manage your professional profile and default interview preferences."
+          description="Manage your professional profile, account identity, and appearance preferences."
         />
 
         {profile ? (
-          <div className="mt-6 space-y-6">
-            <ProfileSettingsForm initialProfile={profile} />
-            <AccountInformationCard
-              account={profile.account}
-              profile={profile.profile}
-            />
-          </div>
+          <Suspense fallback={<SettingsFallback />}>
+            <SettingsClient profile={profile} />
+          </Suspense>
         ) : (
           <EmptyState
             className="mt-6 bg-white"
@@ -43,6 +39,15 @@ export default async function ProfileSettingsPage() {
           />
         )}
       </PageContainer>
+    </div>
+  );
+}
+
+function SettingsFallback() {
+  return (
+    <div className="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
+      <div className="h-64 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
+      <div className="h-96 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
     </div>
   );
 }

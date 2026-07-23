@@ -11,11 +11,14 @@ type ButtonProps = BaseProps & {
   disabled?: boolean;
   onClick?: () => void;
   variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
+  loading?: boolean;
 };
 
 type LinkButtonProps = BaseProps & {
   href: string;
   variant?: "primary" | "secondary" | "ghost";
+  size?: "sm" | "md" | "lg";
 };
 
 type BadgeProps = BaseProps & {
@@ -27,13 +30,19 @@ const focusRing =
 
 const buttonVariants = {
   primary:
-    "border border-transparent bg-gradient-to-r from-blue-600 to-fuchsia-500 text-white shadow-sm shadow-blue-950/20 hover:from-blue-500 hover:to-fuchsia-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-white dark:shadow-blue-950/40",
+    "border border-transparent bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 text-white shadow-sm shadow-blue-950/20 hover:from-blue-500 hover:via-violet-500 hover:to-fuchsia-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:text-white dark:shadow-blue-950/40 dark:disabled:from-slate-700 dark:disabled:via-slate-700 dark:disabled:to-slate-700 dark:disabled:text-slate-300",
   secondary:
     "border border-slate-200/80 bg-white/80 text-slate-800 shadow-sm shadow-blue-950/[0.03] hover:border-blue-200 hover:bg-blue-50 disabled:text-slate-400 dark:border-slate-700/70 dark:bg-slate-900/45 dark:text-slate-100 dark:shadow-none dark:hover:border-cyan-400/50 dark:hover:bg-slate-800/80 dark:disabled:text-slate-500",
   ghost:
     "border border-transparent bg-transparent text-slate-700 hover:bg-blue-50 disabled:text-slate-400 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:disabled:text-slate-600",
   danger:
     "border border-red-200 bg-white/80 text-red-700 hover:bg-red-50 disabled:text-red-300 dark:border-red-400/25 dark:bg-red-950/20 dark:text-red-200 dark:hover:bg-red-950/35",
+};
+
+const buttonSizes = {
+  sm: "min-h-9 px-3 py-1.5",
+  md: "min-h-10 px-4 py-2",
+  lg: "min-h-12 px-5 py-3",
 };
 
 const badgeTones = {
@@ -53,7 +62,7 @@ export function Card({ children, className = "", id }: BaseProps) {
   return (
     <section
       id={id}
-      className={`rounded-2xl border border-slate-200/75 bg-white/82 shadow-sm shadow-blue-950/[0.04] backdrop-blur-xl dark:border-slate-700/55 dark:bg-slate-900/58 dark:shadow-blue-950/20 ${className}`}
+      className={`group/card rounded-[1.35rem] border border-slate-200/70 bg-gradient-to-br from-white/92 via-white/82 to-blue-50/52 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(37,99,235,0.10)] dark:border-slate-700/45 dark:bg-gradient-to-br dark:from-[#111A38]/88 dark:via-[#0D1530]/82 dark:to-[#080D20]/76 dark:shadow-[0_22px_70px_rgba(2,6,23,0.30)] dark:hover:shadow-[0_26px_80px_rgba(37,99,235,0.15)] ${className}`}
     >
       {children}
     </section>
@@ -72,17 +81,17 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <Card className="p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <Card className="p-7 sm:p-8">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           {eyebrow ? (
-            <p className="text-sm font-medium text-blue-700 dark:text-cyan-300">{eyebrow}</p>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-cyan-300">{eyebrow}</p>
           ) : null}
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">
+          <h1 className="mt-3 text-[2rem] font-semibold leading-tight tracking-[-0.025em] text-slate-950 dark:text-slate-50 sm:text-4xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="mt-4 max-w-2xl text-[15px] leading-7 text-slate-600 dark:text-slate-300">
               {description}
             </p>
           ) : null}
@@ -111,14 +120,22 @@ export function Button({
   disabled,
   onClick,
   variant = "primary",
+  size = "md",
+  loading = false,
 }: ButtonProps) {
   return (
     <button
       type={type}
-      disabled={disabled}
+      disabled={disabled || loading}
       onClick={onClick}
-      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${focusRing} ${buttonVariants[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed ${focusRing} ${buttonSizes[size]} ${buttonVariants[variant]} ${className}`}
     >
+      {loading ? (
+        <span
+          aria-hidden="true"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      ) : null}
       {children}
     </button>
   );
@@ -129,11 +146,12 @@ export function LinkButton({
   className = "",
   href,
   variant = "secondary",
+  size = "md",
 }: LinkButtonProps) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors ${focusRing} ${buttonVariants[variant]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-xl text-sm font-semibold transition duration-200 hover:-translate-y-0.5 active:translate-y-0 ${focusRing} ${buttonSizes[size]} ${buttonVariants[variant]} ${className}`}
     >
       {children}
     </Link>
@@ -186,10 +204,15 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-dashed border-slate-300/80 bg-blue-50/45 p-8 text-center dark:border-slate-700 dark:bg-slate-900/35 ${className}`}
+      className={`rounded-[1.35rem] border border-dashed border-slate-300/80 bg-gradient-to-br from-blue-50/70 to-fuchsia-50/40 p-8 text-center dark:border-slate-700 dark:from-slate-900/55 dark:to-[#111A38]/45 ${className}`}
     >
-      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-fuchsia-500 text-white shadow-lg shadow-blue-950/20">
+        <svg aria-hidden="true" viewBox="0 0 20 20" className="h-5 w-5" fill="none">
+          <path d="M5 10h10M10 5v10" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        </svg>
+      </div>
+      <p className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+      <p className="mx-auto mt-2 max-w-md text-[15px] leading-7 text-slate-500 dark:text-slate-400">
         {description}
       </p>
       {action ? <div className="mt-5">{action}</div> : null}
@@ -207,13 +230,21 @@ export function StatCard({
   helper?: string;
 }) {
   return (
-    <Card className="p-5">
+    <Card className="p-6">
       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">
+      <p className="mt-3 text-3xl font-semibold tracking-[-0.025em] text-slate-950 dark:text-slate-50">
         {value}
       </p>
       {helper ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{helper}</p> : null}
     </Card>
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-2xl bg-slate-200/75 dark:bg-slate-800/65 ${className}`}
+    />
   );
 }
 

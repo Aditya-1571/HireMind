@@ -55,9 +55,7 @@ export default async function StartInterviewPage({
             evaluationStyle: initialValues?.evaluation_style,
             answerMode: initialValues?.answer_mode,
           }}
-          savedDefaults={profile?.interview_defaults ?? null}
           savedTargetRole={profile?.profile.target_role ?? null}
-          hasSavedDefaults={Boolean(profile)}
         />
       </PageContainer>
     </div>

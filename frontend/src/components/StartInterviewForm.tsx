@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CreatedInterview, InterviewDefaults, Resume } from "@/lib/api";
-import { Alert, Badge, Button, Card, fieldClassName } from "@/components/ui";
+import type { CreatedInterview, Resume } from "@/lib/api";
+import { Alert, Button, Card, fieldClassName } from "@/components/ui";
 
 const interviewTypes = ["HR", "Technical", "Mixed"];
 const difficultyLevels = ["Easy", "Medium", "Hard"];
@@ -44,9 +44,7 @@ type StartInterviewFormProps = {
     evaluationStyle?: string;
     answerMode?: string;
   };
-  savedDefaults?: InterviewDefaults | null;
   savedTargetRole?: string | null;
-  hasSavedDefaults?: boolean;
 };
 
 function validInterviewType(value?: string | null) {
@@ -93,25 +91,18 @@ function getInitialCustomQuestionCount(value?: string | number | null) {
 export function StartInterviewForm({
   resumes,
   initialValues,
-  savedDefaults,
   savedTargetRole,
-  hasSavedDefaults,
 }: StartInterviewFormProps) {
   const router = useRouter();
   const defaultRole = initialValues?.role ?? savedTargetRole ?? "Software Engineer";
   const isInitialCustomRole =
     Boolean(defaultRole) && !targetRoles.includes(defaultRole);
-  const initialQuestionCount =
-    initialValues?.questionCount ?? savedDefaults?.question_count ?? 10;
+  const initialQuestionCount = initialValues?.questionCount ?? 10;
   const [interviewType, setInterviewType] = useState(
-    validInterviewType(initialValues?.interviewType) ??
-      validInterviewType(savedDefaults?.interview_type) ??
-      "HR",
+    validInterviewType(initialValues?.interviewType) ?? "HR",
   );
   const [difficulty, setDifficulty] = useState(
-    validDifficulty(initialValues?.difficulty) ??
-      validDifficulty(savedDefaults?.difficulty) ??
-      "Easy",
+    validDifficulty(initialValues?.difficulty) ?? "Easy",
   );
   const [targetRole, setTargetRole] = useState(
     isInitialCustomRole ? "Custom Role" : defaultRole,
@@ -128,14 +119,10 @@ export function StartInterviewForm({
     getInitialCustomQuestionCount(initialQuestionCount),
   );
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(
-    validTimeLimit(initialValues?.timeLimitMinutes) ??
-      validTimeLimit(savedDefaults?.time_limit_minutes) ??
-      "",
+    validTimeLimit(initialValues?.timeLimitMinutes) ?? "",
   );
   const [evaluationStyle, setEvaluationStyle] = useState(
-    validEvaluationStyle(initialValues?.evaluationStyle) ??
-      validEvaluationStyle(savedDefaults?.evaluation_style) ??
-      "balanced",
+    validEvaluationStyle(initialValues?.evaluationStyle) ?? "balanced",
   );
   const [resumeId, setResumeId] = useState(
     resumes.length === 1 ? resumes[0].id : "",
@@ -168,11 +155,9 @@ export function StartInterviewForm({
             ? "Choose between 5 and 30 questions."
             : null;
   const canStart = isTargetRoleValid && isQuestionCountValid && !isStarting;
-  const defaultSource = initialValues?.role || initialValues?.difficulty || initialValues?.questionCount
-    ? "Practice Again values applied"
-    : hasSavedDefaults
-      ? "Saved defaults applied"
-      : "Application defaults applied";
+  const selectedResume = resumes.find((resume) => resume.id === resumeId);
+  const estimatedDuration =
+    timeLimitMinutes || `${Math.max(15, Math.ceil(questionCount * 2))} min`;
 
   const handleStart = async () => {
     if (!canStart) {
@@ -224,23 +209,15 @@ export function StartInterviewForm({
   };
 
   return (
-    <Card className="mt-6 p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">
-            Interview configuration
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Review the setup before generating questions. You can change these
-            values for this interview without changing saved settings.
-          </p>
-        </div>
-        <Badge tone={defaultSource.startsWith("Practice") ? "info" : "neutral"}>
-          {defaultSource}
-        </Badge>
-      </div>
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        <div>
+    <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="space-y-6">
+        <Card className="p-6">
+          <SectionTitle
+            title="Interview goal"
+            description="Choose the core interview context before questions are generated."
+          />
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Interview type
           </label>
@@ -255,8 +232,8 @@ export function StartInterviewForm({
               </option>
             ))}
           </select>
-        </div>
-        <div>
+            </div>
+            <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Difficulty
           </label>
@@ -271,8 +248,8 @@ export function StartInterviewForm({
               </option>
             ))}
           </select>
-        </div>
-        <div className="sm:col-span-2">
+            </div>
+            <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Target role
           </label>
@@ -287,9 +264,9 @@ export function StartInterviewForm({
               </option>
             ))}
           </select>
-        </div>
-        {isCustomRole ? (
-          <div className="sm:col-span-2">
+            </div>
+            {isCustomRole ? (
+              <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Custom role
             </label>
@@ -302,9 +279,18 @@ export function StartInterviewForm({
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Enter 2 to 100 characters.
             </p>
+              </div>
+            ) : null}
           </div>
-        ) : null}
-        <div className="sm:col-span-2">
+        </Card>
+
+        <Card className="p-6">
+          <SectionTitle
+            title="Session format"
+            description="Set the length, pace, and evaluation tone for this practice session."
+          />
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Number of questions
           </label>
@@ -354,8 +340,8 @@ export function StartInterviewForm({
           {questionCountError ? (
             <p className="mt-2 text-sm text-red-600 dark:text-red-300">{questionCountError}</p>
           ) : null}
-        </div>
-        <div>
+            </div>
+            <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Time limit
           </label>
@@ -370,8 +356,8 @@ export function StartInterviewForm({
               </option>
             ))}
           </select>
-        </div>
-        <div>
+            </div>
+            <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Evaluation style
           </label>
@@ -386,17 +372,28 @@ export function StartInterviewForm({
               </option>
             ))}
           </select>
-        </div>
-        <div className="sm:col-span-2">
+            </div>
+            <div className="sm:col-span-2">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Answer mode</p>
-          <p className="mt-2 rounded-xl border border-slate-200/70 bg-slate-100/80 px-3 py-2 text-sm text-slate-600 dark:border-slate-700/60 dark:bg-slate-950/35 dark:text-slate-300">
-            Text Answer
+          <p className="mt-2 rounded-xl border border-blue-200/70 bg-blue-50/80 px-3 py-2 text-sm text-slate-700 dark:border-cyan-400/25 dark:bg-cyan-400/10 dark:text-cyan-100">
+            Text response
           </p>
-        </div>
-        {resumes.length > 0 ? (
-          <div className="sm:col-span-2">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Voice responses are not enabled in this version.
+          </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <SectionTitle
+            title="Resume context"
+            description="Optionally personalize questions with a structured resume analysis."
+          />
+          {resumes.length > 0 ? (
+            <div className="mt-6">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Resume context
+              Resume
             </label>
             <select
               value={resumeId}
@@ -410,22 +407,86 @@ export function StartInterviewForm({
                 </option>
               ))}
             </select>
-          </div>
-        ) : null}
+            </div>
+          ) : (
+            <p className="mt-6 rounded-2xl border border-dashed border-slate-300/80 bg-blue-50/45 p-4 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:bg-slate-950/25 dark:text-slate-300">
+              No analyzed resume is available. You can still start a
+              role-based interview without resume context.
+            </p>
+          )}
+        </Card>
       </div>
-      <Button className="mt-6" onClick={handleStart} disabled={!canStart}>
-        {isStarting ? "Generating..." : "Start Interview"}
-      </Button>
-      {isStarting ? (
-        <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-          Generating personalized interview questions...
-        </p>
-      ) : null}
-      {message ? (
-        <Alert className="mt-4" tone="danger">
-          {message}
-        </Alert>
-      ) : null}
-    </Card>
+
+      <aside className="xl:sticky xl:top-8 xl:self-start">
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+            Session summary
+          </h2>
+          <dl className="mt-5 space-y-4 text-sm">
+            <SummaryRow label="Role" value={isCustomRole ? trimmedCustomRole || "Custom role" : targetRole} />
+            <SummaryRow label="Type" value={interviewType} />
+            <SummaryRow label="Difficulty" value={difficulty} />
+            <SummaryRow label="Questions" value={String(questionCount)} />
+            <SummaryRow
+              label="Duration"
+              value={timeLimitMinutes ? `${timeLimitMinutes} minutes` : `About ${estimatedDuration}`}
+            />
+            <SummaryRow
+              label="Resume"
+              value={selectedResume?.original_filename ?? "No resume"}
+            />
+          </dl>
+          <Button
+            className="mt-6 w-full"
+            onClick={handleStart}
+            disabled={!canStart}
+            loading={isStarting}
+            size="lg"
+          >
+            {isStarting ? "Generating..." : "Start interview"}
+          </Button>
+          {isStarting ? (
+            <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+              Generating personalized interview questions...
+            </p>
+          ) : null}
+          {message ? (
+            <Alert className="mt-4" tone="danger">
+              {message}
+            </Alert>
+          ) : null}
+        </Card>
+      </aside>
+    </div>
+  );
+}
+
+function SectionTitle({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">
+        {title}
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-slate-200/65 pb-3 last:border-b-0 dark:border-slate-800">
+      <dt className="text-slate-500 dark:text-slate-400">{label}</dt>
+      <dd className="max-w-[12rem] break-words text-right font-semibold text-slate-950 dark:text-slate-50">
+        {value}
+      </dd>
+    </div>
   );
 }

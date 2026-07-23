@@ -51,16 +51,17 @@ export default async function Home() {
   const startHref = user ? "/interviews/start" : "/login";
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070B1D] text-slate-50">
+    <main className="min-h-screen overflow-hidden bg-[#050816] text-slate-50">
       <Header />
-      <section className="hiremind-ambient relative px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <section className="hiremind-ambient relative px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="premium-grid absolute inset-0 opacity-45" aria-hidden="true" />
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-          <div>
+          <div className="animate-hiremind-fade-up">
             <Badge tone="info">AI-powered interview preparation</Badge>
-            <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mt-6 max-w-4xl text-[3.75rem] font-semibold leading-[0.96] tracking-[-0.055em] text-white sm:text-[4rem] lg:text-[4.5rem]">
               Practice smarter. Interview with confidence.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-7 max-w-2xl text-[17px] leading-8 text-slate-300">
               Generate role-specific questions, practice realistic interviews,
               receive AI feedback, and track your improvement in one focused
               workspace.
@@ -143,11 +144,11 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="features" className="px-4 py-16 sm:px-6 lg:px-8">
+      <section id="features" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-cyan-300">Features</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+            <h2 className="mt-3 text-4xl font-semibold tracking-[-0.035em] text-white">
               Built around the real preparation workflow.
             </h2>
           </div>
@@ -156,7 +157,7 @@ export default async function Home() {
               <Link
                 key={feature.title}
                 href={feature.href}
-                className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 transition hover:border-cyan-300/35 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                className="rounded-[1.35rem] border border-white/10 bg-white/[0.055] p-6 transition duration-200 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
                 <h3 className="text-base font-semibold text-white">
                   {feature.title}
@@ -170,7 +171,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="how-it-works" className="px-4 py-16 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="text-sm font-semibold text-fuchsia-300">How it works</p>
           <div className="mt-6 grid gap-4 md:grid-cols-4">
@@ -191,11 +192,11 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="reports" className="px-4 py-16 sm:px-6 lg:px-8">
+      <section id="reports" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <p className="text-sm font-semibold text-cyan-300">Reports</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+            <h2 className="mt-3 text-4xl font-semibold tracking-[-0.035em] text-white">
               Turn practice sessions into reviewable progress.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-400">
