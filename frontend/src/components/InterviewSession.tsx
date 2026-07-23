@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompletedInterview, Interview } from "@/lib/api";
+import { Alert, Badge, Button, Card, fieldClassName } from "@/components/ui";
 
 type InterviewSessionProps = {
   initialInterview: Interview;
@@ -164,34 +165,34 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
   };
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6">
+    <Card className="p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-neutral-500">
+          <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
             {interview.interview_type} interview
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-neutral-950">
+          <h1 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
             {interview.difficulty} difficulty
           </h1>
-          <p className="mt-2 text-sm text-neutral-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             Target role: {interview.target_role}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-neutral-600">
-            <span className="rounded-md bg-neutral-100 px-2 py-1">
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+            <Badge>
               {formatEvaluationStyle(interview.evaluation_style)}
-            </span>
-            <span className="rounded-md bg-neutral-100 px-2 py-1">
+            </Badge>
+            <Badge>
               {interview.answer_mode === "text" ? "Text Answer" : "Text"}
-            </span>
-            <span className="rounded-md bg-neutral-100 px-2 py-1">
+            </Badge>
+            <Badge tone={interview.time_limit_minutes ? "warning" : "neutral"}>
               {interview.time_limit_minutes
                 ? `${interview.time_limit_minutes} min limit`
                 : "Unlimited"}
-            </span>
+            </Badge>
           </div>
         </div>
         <div className="space-y-2 sm:text-right">
-          <p className="rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700">
+          <p className="rounded-xl border border-slate-200/70 bg-blue-50/70 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-950/35 dark:text-slate-200">
             Question {progressNumber} of {interview.total_questions}
           </p>
           <p
@@ -202,7 +203,7 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
                   ? "text-sm font-semibold text-red-600"
                   : timerTone === "warning"
                     ? "text-sm font-semibold text-amber-700"
-                    : "text-sm font-medium text-neutral-600"
+                    : "text-sm font-medium text-slate-600 dark:text-slate-300"
             }
           >
             {timerTone === "expired"
@@ -212,13 +213,13 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
         </div>
       </div>
       <div className="mt-5">
-        <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div
-            className="h-full rounded-full bg-neutral-950"
+            className="h-full rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 to-fuchsia-500 transition-all"
             style={{ width: `${Math.min(100, progressPercent)}%` }}
           />
         </div>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           {interview.answered_count} answered. The timer is advisory in this
           version, so your saved answers will not be lost when time reaches
           zero.
@@ -226,13 +227,13 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
       </div>
 
       {currentQuestion ? (
-        <div className="mt-8">
-          <p className="text-lg font-medium leading-7 text-neutral-950">
+        <div className="mt-8 rounded-2xl border border-slate-200/75 bg-blue-50/45 p-5 dark:border-slate-700/55 dark:bg-slate-950/30">
+          <p className="text-lg font-medium leading-7 text-slate-950 dark:text-slate-50">
             {currentQuestion.question_text}
           </p>
           <label
             htmlFor="answer"
-            className="mt-6 block text-sm font-medium text-neutral-700"
+            className="mt-6 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Your answer
           </label>
@@ -242,18 +243,16 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
             onChange={(event) => setAnswer(event.target.value)}
             disabled={isSubmitting || isCompleting}
             rows={8}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 min-h-48 ${fieldClassName}`}
           />
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
+            <Button
               onClick={submitAnswer}
               disabled={isSubmitting || isCompleting || !answer.trim()}
-              className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
             >
-              {isSubmitting ? "Submitting..." : "Submit"}
-            </button>
-            <p className="text-sm text-neutral-500">
+              {isSubmitting ? "Submitting..." : "Submit answer"}
+            </Button>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {interview.answered_count} answered
             </p>
           </div>
@@ -261,24 +260,23 @@ export function InterviewSession({ initialInterview }: InterviewSessionProps) {
       ) : null}
 
       {isComplete ? (
-        <div className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4">
-          <p className="text-sm font-medium text-neutral-700">
+        <div className="mt-8 rounded-2xl border border-slate-200/75 bg-blue-50/45 p-4 dark:border-slate-700/55 dark:bg-slate-950/30">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
             {isCompleting
               ? "Evaluating your interview responses..."
               : "All questions have been answered."}
           </p>
-          <button
-            type="button"
-            onClick={completeInterview}
-            disabled={isCompleting}
-            className="mt-4 rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-          >
-            {isCompleting ? "Evaluating..." : "View Summary"}
-          </button>
+          <Button className="mt-4" onClick={completeInterview} disabled={isCompleting}>
+            {isCompleting ? "Evaluating..." : "View report"}
+          </Button>
         </div>
       ) : null}
 
-      {message ? <p className="mt-4 text-sm text-red-600">{message}</p> : null}
-    </section>
+      {message ? (
+        <Alert className="mt-4" tone="danger">
+          {message}
+        </Alert>
+      ) : null}
+    </Card>
   );
 }

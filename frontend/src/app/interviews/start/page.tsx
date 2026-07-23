@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
 import { StartInterviewForm } from "@/components/StartInterviewForm";
+import { PageHeader } from "@/components/ui";
 import { getProfile, getResumes } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
@@ -35,9 +36,14 @@ export default async function StartInterviewPage({
   );
 
   return (
-    <div className="min-h-screen bg-neutral-50 md:flex">
-      <Sidebar />
+    <div className="hiremind-ambient min-h-screen md:flex">
+      <Sidebar user={user} />
       <PageContainer className="py-8">
+        <PageHeader
+          eyebrow="Interview setup"
+          title="Start Interview"
+          description="Choose the role, difficulty, resume context, and evaluation preferences for your next practice session."
+        />
         <StartInterviewForm
           resumes={analyzedResumes}
           initialValues={{
@@ -51,6 +57,7 @@ export default async function StartInterviewPage({
           }}
           savedDefaults={profile?.interview_defaults ?? null}
           savedTargetRole={profile?.profile.target_role ?? null}
+          hasSavedDefaults={Boolean(profile)}
         />
       </PageContainer>
     </div>

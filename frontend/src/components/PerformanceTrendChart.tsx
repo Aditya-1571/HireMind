@@ -7,8 +7,10 @@ type PerformanceTrendChartProps = {
 export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center">
-        <p className="text-sm text-neutral-500">No scored interviews yet</p>
+      <div className="rounded-2xl border border-dashed border-slate-300/80 bg-blue-50/35 p-6 text-center dark:border-slate-700 dark:bg-slate-950/25">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          No scored interviews yet
+        </p>
       </div>
     );
   }
@@ -36,14 +38,14 @@ export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
           y1={height}
           y2={height}
           stroke="currentColor"
-          className="text-neutral-200"
+          className="text-slate-200 dark:text-slate-800"
         />
         <polyline
           fill="none"
           points={polyline}
           stroke="currentColor"
           strokeWidth="3"
-          className="text-neutral-950"
+          className="text-blue-600 dark:text-cyan-300"
         />
         {points.map((point) => (
           <circle
@@ -52,11 +54,11 @@ export function PerformanceTrendChart({ items }: PerformanceTrendChartProps) {
             cy={point.y}
             r="4"
             fill="currentColor"
-            className="text-neutral-950"
+            className="text-fuchsia-500 dark:text-fuchsia-300"
           />
         ))}
       </svg>
-      <div className="mt-3 grid gap-2 text-xs text-neutral-500 sm:grid-cols-2">
+      <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2">
         {items.map((item) => (
           <p key={item.interview_id}>
             {item.target_role}: {item.score}/100

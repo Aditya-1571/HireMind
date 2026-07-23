@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CreatedInterview, InterviewDefaults, Resume } from "@/lib/api";
+import { Alert, Badge, Button, Card, fieldClassName } from "@/components/ui";
 
 const interviewTypes = ["HR", "Technical", "Mixed"];
 const difficultyLevels = ["Easy", "Medium", "Hard"];
@@ -45,6 +46,7 @@ type StartInterviewFormProps = {
   };
   savedDefaults?: InterviewDefaults | null;
   savedTargetRole?: string | null;
+  hasSavedDefaults?: boolean;
 };
 
 function validInterviewType(value?: string | null) {
@@ -93,6 +95,7 @@ export function StartInterviewForm({
   initialValues,
   savedDefaults,
   savedTargetRole,
+  hasSavedDefaults,
 }: StartInterviewFormProps) {
   const router = useRouter();
   const defaultRole = initialValues?.role ?? savedTargetRole ?? "Software Engineer";
@@ -165,6 +168,11 @@ export function StartInterviewForm({
             ? "Choose between 5 and 30 questions."
             : null;
   const canStart = isTargetRoleValid && isQuestionCountValid && !isStarting;
+  const defaultSource = initialValues?.role || initialValues?.difficulty || initialValues?.questionCount
+    ? "Practice Again values applied"
+    : hasSavedDefaults
+      ? "Saved defaults applied"
+      : "Application defaults applied";
 
   const handleStart = async () => {
     if (!canStart) {
@@ -216,19 +224,30 @@ export function StartInterviewForm({
   };
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6">
-      <h1 className="text-2xl font-semibold text-neutral-950">
-        Start Interview
-      </h1>
+    <Card className="mt-6 p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">
+            Interview configuration
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Review the setup before generating questions. You can change these
+            values for this interview without changing saved settings.
+          </p>
+        </div>
+        <Badge tone={defaultSource.startsWith("Practice") ? "info" : "neutral"}>
+          {defaultSource}
+        </Badge>
+      </div>
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Interview type
           </label>
           <select
             value={interviewType}
             onChange={(event) => setInterviewType(event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 ${fieldClassName}`}
           >
             {interviewTypes.map((item) => (
               <option key={item} value={item}>
@@ -238,13 +257,13 @@ export function StartInterviewForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Difficulty
           </label>
           <select
             value={difficulty}
             onChange={(event) => setDifficulty(event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 ${fieldClassName}`}
           >
             {difficultyLevels.map((item) => (
               <option key={item} value={item}>
@@ -254,13 +273,13 @@ export function StartInterviewForm({
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Target role
           </label>
           <select
             value={targetRole}
             onChange={(event) => setTargetRole(event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 ${fieldClassName}`}
           >
             {targetRoles.map((item) => (
               <option key={item} value={item}>
@@ -271,22 +290,22 @@ export function StartInterviewForm({
         </div>
         {isCustomRole ? (
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Custom role
             </label>
             <input
               value={customRole}
               onChange={(event) => setCustomRole(event.target.value)}
               maxLength={100}
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             />
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Enter 2 to 100 characters.
             </p>
           </div>
         ) : null}
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Number of questions
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -300,8 +319,8 @@ export function StartInterviewForm({
                 }}
                 className={
                   questionCountMode === String(count)
-                    ? "rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white"
-                    : "rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                    ? "rounded-xl border border-transparent bg-gradient-to-r from-blue-600 to-fuchsia-500 px-3 py-2 text-sm font-semibold text-white"
+                    : "rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700/70 dark:bg-slate-950/25 dark:text-slate-300 dark:hover:border-cyan-400/40 dark:hover:bg-slate-800/75"
                 }
               >
                 {count}
@@ -312,8 +331,8 @@ export function StartInterviewForm({
               onClick={() => setQuestionCountMode("custom")}
               className={
                 questionCountMode === "custom"
-                  ? "rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white"
-                  : "rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  ? "rounded-xl border border-transparent bg-gradient-to-r from-blue-600 to-fuchsia-500 px-3 py-2 text-sm font-semibold text-white"
+                  : "rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700/70 dark:bg-slate-950/25 dark:text-slate-300 dark:hover:border-cyan-400/40 dark:hover:bg-slate-800/75"
               }
             >
               Custom
@@ -325,25 +344,25 @@ export function StartInterviewForm({
               onChange={(event) => setCustomQuestionCount(event.target.value)}
               inputMode="numeric"
               placeholder="Enter 5 to 30"
-              className="mt-3 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-3 ${fieldClassName}`}
             />
           ) : null}
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Choose between 5 and 30 questions. Longer interviews take more time
             to generate and evaluate.
           </p>
           {questionCountError ? (
-            <p className="mt-2 text-sm text-red-600">{questionCountError}</p>
+            <p className="mt-2 text-sm text-red-600 dark:text-red-300">{questionCountError}</p>
           ) : null}
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Time limit
           </label>
           <select
             value={timeLimitMinutes}
             onChange={(event) => setTimeLimitMinutes(event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 ${fieldClassName}`}
           >
             {timeLimitOptions.map((item) => (
               <option key={item.label} value={item.value}>
@@ -353,13 +372,13 @@ export function StartInterviewForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Evaluation style
           </label>
           <select
             value={evaluationStyle}
             onChange={(event) => setEvaluationStyle(event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            className={`mt-2 ${fieldClassName}`}
           >
             {evaluationStyles.map((item) => (
               <option key={item.value} value={item.value}>
@@ -369,20 +388,20 @@ export function StartInterviewForm({
           </select>
         </div>
         <div className="sm:col-span-2">
-          <p className="text-sm font-medium text-neutral-700">Answer mode</p>
-          <p className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Answer mode</p>
+          <p className="mt-2 rounded-xl border border-slate-200/70 bg-slate-100/80 px-3 py-2 text-sm text-slate-600 dark:border-slate-700/60 dark:bg-slate-950/35 dark:text-slate-300">
             Text Answer
           </p>
         </div>
         {resumes.length > 0 ? (
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Resume context
             </label>
             <select
               value={resumeId}
               onChange={(event) => setResumeId(event.target.value)}
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               <option value="">No resume</option>
               {resumes.map((resume) => (
@@ -394,20 +413,19 @@ export function StartInterviewForm({
           </div>
         ) : null}
       </div>
-      <button
-        type="button"
-        onClick={handleStart}
-        disabled={!canStart}
-        className="mt-6 rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-      >
+      <Button className="mt-6" onClick={handleStart} disabled={!canStart}>
         {isStarting ? "Generating..." : "Start Interview"}
-      </button>
+      </Button>
       {isStarting ? (
-        <p className="mt-4 text-sm text-neutral-600">
+        <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
           Generating personalized interview questions...
         </p>
       ) : null}
-      {message ? <p className="mt-4 text-sm text-red-600">{message}</p> : null}
-    </section>
+      {message ? (
+        <Alert className="mt-4" tone="danger">
+          {message}
+        </Alert>
+      ) : null}
+    </Card>
   );
 }

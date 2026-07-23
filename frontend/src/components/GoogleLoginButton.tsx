@@ -131,14 +131,14 @@ export function GoogleLoginButton() {
     <div>
       <div ref={buttonRef} className="mt-6 min-h-11" />
       {isSigningIn ? (
-        <p className="mt-3 text-sm text-neutral-600">Signing in...</p>
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Signing in...</p>
       ) : null}
       {!googleClientId ? (
-        <p className="mt-3 text-sm text-red-600">
+        <p className="mt-3 text-sm text-red-600 dark:text-red-300">
           Google sign-in is not configured.
         </p>
       ) : null}
-      {message ? <p className="mt-3 text-sm text-red-600">{message}</p> : null}
+      {message ? <p className="mt-3 text-sm text-red-600 dark:text-red-300">{message}</p> : null}
     </div>
   );
 }

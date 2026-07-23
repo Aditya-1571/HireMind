@@ -8,6 +8,14 @@ import type {
 } from "@/lib/api";
 import { updateProfile } from "@/lib/api";
 import { ProfileCompletionCard } from "@/components/ProfileCompletionCard";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  disabledFieldClassName,
+  fieldClassName,
+} from "@/components/ui";
 
 const interviewTypes = ["HR", "Technical", "Mixed"] as const;
 const difficultyLevels = ["Easy", "Medium", "Hard"] as const;
@@ -204,20 +212,20 @@ export function ProfileSettingsForm({
     <div className="space-y-6">
       <ProfileCompletionCard percentage={savedProfile.profile_completion} />
 
-      <section className="rounded-lg border border-neutral-200 bg-white p-6">
+      <Card className="p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-neutral-950">
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
               Profile Information
             </h2>
-            <p className="mt-2 text-sm text-neutral-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               These details help personalize your interview practice.
             </p>
           </div>
           {isDirty ? (
-            <span className="w-fit rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700">
+            <Badge>
               Unsaved changes
-            </span>
+            </Badge>
           ) : null}
         </div>
 
@@ -225,7 +233,7 @@ export function ProfileSettingsForm({
           <div>
             <label
               htmlFor="full_name"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Full name
             </label>
@@ -235,13 +243,13 @@ export function ProfileSettingsForm({
               maxLength={100}
               onChange={(event) => updateField("full_name", event.target.value)}
               placeholder="Your professional name"
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             />
           </div>
           <div>
             <label
               htmlFor="professional_headline"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Professional headline
             </label>
@@ -253,13 +261,13 @@ export function ProfileSettingsForm({
                 updateField("professional_headline", event.target.value)
               }
               placeholder="Aspiring Machine Learning Engineer"
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             />
           </div>
           <div>
             <label
               htmlFor="target_role"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Target role
             </label>
@@ -269,13 +277,13 @@ export function ProfileSettingsForm({
               maxLength={100}
               onChange={(event) => updateField("target_role", event.target.value)}
               placeholder="Backend Developer"
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             />
           </div>
           <div>
             <label
               htmlFor="experience_level"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Experience level
             </label>
@@ -288,7 +296,7 @@ export function ProfileSettingsForm({
                   event.target.value as FormState["experience_level"],
                 )
               }
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               <option value="">Not selected</option>
               {experienceLevels.map((item) => (
@@ -301,7 +309,7 @@ export function ProfileSettingsForm({
           <div className="sm:col-span-2">
             <label
               htmlFor="bio"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Bio
             </label>
@@ -312,20 +320,20 @@ export function ProfileSettingsForm({
               rows={5}
               onChange={(event) => updateField("bio", event.target.value)}
               placeholder="Briefly describe your background, interests, and goals."
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             />
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               {form.bio.length}/500 characters
             </p>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-neutral-950">
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
           Default Interview Preferences
         </h2>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           These defaults are used when you start a new interview unless a
           Practice Again link provides different values.
         </p>
@@ -334,7 +342,7 @@ export function ProfileSettingsForm({
           <div>
             <label
               htmlFor="interview_type"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Default interview type
             </label>
@@ -347,7 +355,7 @@ export function ProfileSettingsForm({
                   event.target.value as FormState["interview_type"],
                 )
               }
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               {interviewTypes.map((item) => (
                 <option key={item} value={item}>
@@ -359,7 +367,7 @@ export function ProfileSettingsForm({
           <div>
             <label
               htmlFor="difficulty"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Default difficulty
             </label>
@@ -372,7 +380,7 @@ export function ProfileSettingsForm({
                   event.target.value as FormState["difficulty"],
                 )
               }
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               {difficultyLevels.map((item) => (
                 <option key={item} value={item}>
@@ -382,7 +390,7 @@ export function ProfileSettingsForm({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Default question count
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -393,8 +401,8 @@ export function ProfileSettingsForm({
                   onClick={() => updateField("question_count", String(count))}
                   className={
                     form.question_count === String(count)
-                      ? "rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white"
-                      : "rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                      ? "rounded-xl border border-transparent bg-gradient-to-r from-blue-600 to-fuchsia-500 px-3 py-2 text-sm font-semibold text-white"
+                      : "rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-slate-700/70 dark:bg-slate-950/25 dark:text-slate-300 dark:hover:border-cyan-400/40 dark:hover:bg-slate-800/75 dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950"
                   }
                 >
                   {count}
@@ -405,13 +413,13 @@ export function ProfileSettingsForm({
               value={form.question_count}
               inputMode="numeric"
               onChange={(event) => updateField("question_count", event.target.value)}
-              className="mt-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+              className={`mt-3 ${fieldClassName}`}
             />
           </div>
           <div>
             <label
               htmlFor="time_limit_minutes"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Default time limit
             </label>
@@ -421,7 +429,7 @@ export function ProfileSettingsForm({
               onChange={(event) =>
                 updateField("time_limit_minutes", event.target.value)
               }
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               {timeLimitOptions.map((item) => (
                 <option key={item.label} value={item.value}>
@@ -433,7 +441,7 @@ export function ProfileSettingsForm({
           <div>
             <label
               htmlFor="evaluation_style"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Default evaluation style
             </label>
@@ -446,7 +454,7 @@ export function ProfileSettingsForm({
                   event.target.value as FormState["evaluation_style"],
                 )
               }
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+              className={`mt-2 ${fieldClassName}`}
             >
               {evaluationStyles.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -458,7 +466,7 @@ export function ProfileSettingsForm({
           <div>
             <label
               htmlFor="answer_mode"
-              className="block text-sm font-medium text-neutral-700"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Answer mode
             </label>
@@ -466,49 +474,46 @@ export function ProfileSettingsForm({
               id="answer_mode"
               value="Text"
               disabled
-              className="mt-2 w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+              className={`mt-2 ${disabledFieldClassName}`}
             />
           </div>
         </div>
-      </section>
+      </Card>
 
       {validationErrors.length > 0 ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4">
+        <Alert tone="danger">
           <ul className="space-y-1 text-sm text-red-700">
             {validationErrors.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </div>
+        </Alert>
       ) : null}
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <Alert tone="danger">
           {error}
-        </p>
+        </Alert>
       ) : null}
       {success ? (
-        <p className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+        <Alert tone="success">
           {success}
-        </p>
+        </Alert>
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
+        <Button
           onClick={save}
           disabled={!canSave}
-          className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
         >
           {isSaving ? "Saving..." : "Save Settings"}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           onClick={resetForm}
           disabled={!isDirty || isSaving}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400"
+          variant="secondary"
         >
           Reset
-        </button>
+        </Button>
       </div>
     </div>
   );

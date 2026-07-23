@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { InterviewReport } from "@/components/InterviewReport";
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
+import { Card, LinkButton } from "@/components/ui";
 import { getInterviewReport } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
@@ -28,47 +28,41 @@ export default async function InterviewCompletePage({
     }
 
     return (
-      <div className="min-h-screen bg-neutral-50 md:flex">
+      <div className="hiremind-ambient min-h-screen md:flex">
         <div className="print-hidden">
-          <Sidebar />
+          <Sidebar user={user} />
         </div>
         <PageContainer className="py-8">
-          <section className="rounded-lg border border-neutral-200 bg-white p-6">
-            <p className="text-sm font-medium text-neutral-500">
+          <Card className="p-6">
+            <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
               Interview Report
             </p>
-            <h1 className="mt-2 text-2xl font-semibold text-neutral-950">
+            <h1 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
               Report unavailable
             </h1>
-            <p className="mt-4 text-sm leading-6 text-neutral-600">
+            <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {result.status === 409
                 ? "Complete the interview before viewing the report."
                 : result.message}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              <Link
-                href="/interviews/history"
-                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-              >
+              <LinkButton href="/interviews/history">
                 Back to History
-              </Link>
-              <Link
-                href={`/interviews/${interviewId}`}
-                className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-              >
+              </LinkButton>
+              <LinkButton href={`/interviews/${interviewId}`} variant="primary">
                 Continue Interview
-              </Link>
+              </LinkButton>
             </div>
-          </section>
+          </Card>
         </PageContainer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 md:flex">
+    <div className="hiremind-ambient min-h-screen md:flex">
       <div className="print-hidden">
-        <Sidebar />
+        <Sidebar user={user} />
       </div>
       <PageContainer className="py-8">
         <InterviewReport report={result.report} />
