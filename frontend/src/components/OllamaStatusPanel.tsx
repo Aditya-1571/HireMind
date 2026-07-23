@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { AiGeneration, AiHealth } from "@/lib/api";
+import { Alert, Badge, Button, Card } from "@/components/ui";
 
 type OllamaStatusPanelProps = {
   health: AiHealth;
@@ -51,34 +52,42 @@ export function OllamaStatusPanel({ health }: OllamaStatusPanelProps) {
       setIsTesting(false);
     }
   };
+  const statusTone = !health.ollama_reachable
+    ? "danger"
+    : !health.model_available
+      ? "warning"
+      : "success";
 
   return (
-    <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
+    <Card className="mt-6 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-950">AI Status</h2>
-          <p className="mt-2 text-sm text-neutral-600">
-            {getStatusLabel(health)} - {health.model}
-          </p>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">AI Status</h2>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge tone={statusTone}>{getStatusLabel(health)}</Badge>
+            <span className="text-sm text-slate-600 dark:text-slate-300">{health.model}</span>
+          </div>
         </div>
-        <button
-          type="button"
+        <Button
           onClick={testAi}
           disabled={isTesting || !health.ollama_reachable || !health.model_available}
-          className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
         >
           {isTesting ? "Testing..." : "Test AI"}
-        </button>
+        </Button>
       </div>
       {result ? (
-        <div className="mt-4 rounded-md border border-neutral-200 bg-neutral-50 p-4">
-          <p className="text-sm font-medium text-neutral-700">{result.model}</p>
-          <p className="mt-2 text-sm leading-6 text-neutral-700">
+        <div className="mt-4 rounded-2xl border border-slate-200/75 bg-blue-50/45 p-4 dark:border-slate-700/60 dark:bg-slate-950/30">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{result.model}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
             {result.generated_text}
           </p>
         </div>
       ) : null}
-      {message ? <p className="mt-4 text-sm text-red-600">{message}</p> : null}
-    </section>
+      {message ? (
+        <Alert className="mt-4" tone="danger">
+          {message}
+        </Alert>
+      ) : null}
+    </Card>
   );
 }

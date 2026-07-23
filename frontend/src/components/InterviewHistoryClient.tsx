@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { InterviewListResponse } from "@/lib/api";
+import { Badge, Button, Card, EmptyState, fieldClassName } from "@/components/ui";
 
 const statusOptions = [
   { value: "", label: "All statuses" },
@@ -51,6 +52,10 @@ function emptyResponse(): InterviewListResponse {
     total: 0,
     total_pages: 0,
   };
+}
+
+function statusTone(status: string) {
+  return status === "completed" ? "success" : "info";
 }
 
 export function InterviewHistoryClient() {
@@ -164,12 +169,12 @@ export function InterviewHistoryClient() {
   const canGoNext = data.total_pages > 0 && currentPage < data.total_pages;
 
   return (
-    <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
+    <Card className="mt-6 p-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div>
           <label
             htmlFor="status"
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Status
           </label>
@@ -177,7 +182,7 @@ export function InterviewHistoryClient() {
             id="status"
             value={searchParams.get("status") ?? ""}
             onChange={(event) => updateParam("status", event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className={`mt-2 ${fieldClassName}`}
           >
             {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -189,7 +194,7 @@ export function InterviewHistoryClient() {
         <div>
           <label
             htmlFor="interview_type"
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Type
           </label>
@@ -199,7 +204,7 @@ export function InterviewHistoryClient() {
             onChange={(event) =>
               updateParam("interview_type", event.target.value)
             }
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className={`mt-2 ${fieldClassName}`}
           >
             {typeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -211,7 +216,7 @@ export function InterviewHistoryClient() {
         <div>
           <label
             htmlFor="difficulty"
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Difficulty
           </label>
@@ -219,7 +224,7 @@ export function InterviewHistoryClient() {
             id="difficulty"
             value={searchParams.get("difficulty") ?? ""}
             onChange={(event) => updateParam("difficulty", event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className={`mt-2 ${fieldClassName}`}
           >
             {difficultyOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -229,14 +234,14 @@ export function InterviewHistoryClient() {
           </select>
         </div>
         <div>
-          <label htmlFor="sort" className="text-sm font-medium text-neutral-700">
+          <label htmlFor="sort" className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Sort
           </label>
           <select
             id="sort"
             value={searchParams.get("sort") ?? "newest"}
             onChange={(event) => updateParam("sort", event.target.value)}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className={`mt-2 ${fieldClassName}`}
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -248,7 +253,7 @@ export function InterviewHistoryClient() {
         <div>
           <label
             htmlFor="target_role"
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Target role
           </label>
@@ -258,74 +263,78 @@ export function InterviewHistoryClient() {
             value={targetRole}
             onChange={(event) => setTargetRole(event.target.value)}
             placeholder="Search role"
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className={`mt-2 ${fieldClassName}`}
           />
         </div>
       </div>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-neutral-600">Loading interviews...</p>
+        <div className="mt-6 space-y-3">
+          <div className="h-16 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800/70" />
+          <div className="h-16 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800/70" />
+        </div>
       ) : null}
 
-      {error ? <p className="mt-6 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="mt-6 text-sm text-red-600 dark:text-red-300">{error}</p> : null}
 
       {!isLoading && !error && data.interviews.length === 0 ? (
-        <div className="mt-6 rounded-md border border-dashed border-neutral-300 p-8 text-center">
-          <p className="text-sm font-medium text-neutral-700">
-            {hasFilters ? "No matching interviews" : "No interviews yet"}
-          </p>
-          <p className="mt-2 text-sm text-neutral-500">
-            {hasFilters
+        <EmptyState
+          className="mt-6"
+          title={hasFilters ? "No matching interviews" : "No interviews yet"}
+          description={
+            hasFilters
               ? "Try changing the filters or search text."
-              : "Completed and in-progress interviews will appear here."}
-          </p>
-        </div>
+              : "Completed and in-progress interviews will appear here."
+          }
+        />
       ) : null}
 
       {!isLoading && !error && data.interviews.length > 0 ? (
         <>
-          <div className="mt-6 divide-y divide-neutral-200">
+          <div className="mt-6 divide-y divide-slate-200/70 dark:divide-slate-800">
             {data.interviews.map((interview) => (
               <article
                 key={interview.id}
-                className="flex flex-col gap-4 py-5 lg:flex-row lg:items-center lg:justify-between"
+                className="rounded-2xl px-3 py-5 transition-colors hover:bg-blue-50/55 dark:hover:bg-slate-800/45 lg:flex lg:items-center lg:justify-between lg:gap-4"
               >
                 <div>
-                  <h2 className="text-base font-semibold text-neutral-950">
-                    {interview.target_role}
-                  </h2>
-                  <p className="mt-1 text-sm text-neutral-600">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">
+                      {interview.target_role}
+                    </h2>
+                    <Badge tone={statusTone(interview.status)}>
+                      {interview.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     {interview.interview_type} - {interview.difficulty}
                   </p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Status: {interview.status.replace("_", " ")}
-                  </p>
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Resume: {interview.resume_filename ?? "Not selected"}
                   </p>
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {interview.answered_count} of {interview.total_questions} answered -{" "}
                     {interview.question_count} questions requested
                   </p>
                 </div>
                 <dl className="grid gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
                   <div>
-                    <dt className="text-neutral-500">Score</dt>
-                    <dd className="mt-1 font-medium text-neutral-950">
+                    <dt className="text-slate-500 dark:text-slate-400">Score</dt>
+                    <dd className="mt-1 font-medium text-slate-950 dark:text-slate-50">
                       {interview.overall_score === null
                         ? "N/A"
                         : `${interview.overall_score}/100`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Created</dt>
-                    <dd className="mt-1 font-medium text-neutral-950">
+                    <dt className="text-slate-500 dark:text-slate-400">Created</dt>
+                    <dd className="mt-1 font-medium text-slate-950 dark:text-slate-50">
                       {formatDate(interview.started_at)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Completed</dt>
-                    <dd className="mt-1 font-medium text-neutral-950">
+                    <dt className="text-slate-500 dark:text-slate-400">Completed</dt>
+                    <dd className="mt-1 font-medium text-slate-950 dark:text-slate-50">
                       {formatDate(interview.completed_at)}
                     </dd>
                   </div>
@@ -336,7 +345,7 @@ export function InterviewHistoryClient() {
                       ? `/interviews/${interview.id}/complete`
                       : `/interviews/${interview.id}`
                   }
-                  className="inline-flex w-fit rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                  className="mt-4 inline-flex w-fit rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-fuchsia-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950 lg:mt-0"
                 >
                   {interview.status === "completed"
                     ? "View Report"
@@ -347,31 +356,29 @@ export function InterviewHistoryClient() {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Page {currentPage} of {data.total_pages || 1} - {data.total}{" "}
               total
             </p>
             <div className="flex gap-2">
-              <button
-                type="button"
+              <Button
                 disabled={!canGoPrevious}
                 onClick={() => updateParam("page", String(currentPage - 1), false)}
-                className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400"
+                variant="secondary"
               >
                 Previous
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 disabled={!canGoNext}
                 onClick={() => updateParam("page", String(currentPage + 1), false)}
-                className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400"
+                variant="secondary"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         </>
       ) : null}
-    </section>
+    </Card>
   );
 }

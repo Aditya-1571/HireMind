@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert, Button, fieldClassName } from "@/components/ui";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 
@@ -65,7 +66,7 @@ export function ResumeUploadForm() {
       <div>
         <label
           htmlFor="resume"
-          className="block text-sm font-medium text-neutral-700"
+          className="block text-sm font-medium text-slate-700 dark:text-slate-200"
         >
           Resume file
         </label>
@@ -75,27 +76,29 @@ export function ResumeUploadForm() {
           name="file"
           type="file"
           accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          className="mt-2 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-800 file:mr-4 file:rounded-md file:border-0 file:bg-neutral-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-neutral-800"
+          className={`mt-2 block file:mr-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-fuchsia-500 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:from-blue-500 hover:file:to-fuchsia-400 ${fieldClassName}`}
         />
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Upload a text-based PDF, DOCX, or TXT resume. Scanned image-only files
+          are not parsed.
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <button
+        <Button
           type="submit"
           disabled={state === "uploading"}
-          className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
         >
           {state === "uploading" ? "Uploading..." : "Upload resume"}
-        </button>
-        <p className="text-sm text-neutral-500">PDF, DOCX, or TXT up to 5 MB.</p>
+        </Button>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Maximum file size: 5 MB.</p>
       </div>
       {message ? (
-        <p
-          className={
-            state === "error" ? "text-sm text-red-600" : "text-sm text-green-700"
-          }
+        <Alert
+          tone={state === "error" ? "danger" : "success"}
+          className="py-3"
         >
           {message}
-        </p>
+        </Alert>
       ) : null}
     </form>
   );

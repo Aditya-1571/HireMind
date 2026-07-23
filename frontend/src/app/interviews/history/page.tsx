@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { InterviewHistoryClient } from "@/components/InterviewHistoryClient";
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/ui";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
 
 export default async function InterviewHistoryPage() {
@@ -13,24 +14,20 @@ export default async function InterviewHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 md:flex">
-      <Sidebar />
+    <div className="hiremind-ambient min-h-screen md:flex">
+      <Sidebar user={user} />
       <PageContainer className="py-8">
-        <section className="rounded-lg border border-neutral-200 bg-white p-6">
-          <p className="text-sm font-medium text-neutral-500">Interviews</p>
-          <h1 className="mt-2 text-3xl font-semibold text-neutral-950">
-            Interview History
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-            Review previous interview sessions, continue active practice, and
-            revisit completed results.
-          </p>
-        </section>
+        <PageHeader
+          eyebrow="Interviews"
+          title="Interview History"
+          description="Review previous interview sessions, continue active practice, and revisit completed reports."
+        />
 
         <Suspense
           fallback={
-            <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
-              <p className="text-sm text-neutral-600">Loading interviews...</p>
+            <section className="mt-6 rounded-2xl border border-slate-200/75 bg-white/80 p-6 shadow-sm dark:border-slate-700/55 dark:bg-slate-900/58">
+              <div className="h-4 w-40 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-4 h-20 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
             </section>
           }
         >

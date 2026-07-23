@@ -9,18 +9,38 @@ import type {
   ResumeProject,
   ResumeSkillCategories,
 } from "@/lib/api";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState as EmptyPanel,
+} from "@/components/ui";
 
 type ResumeAnalysisPanelProps = {
   resume: Resume;
 };
 
 function EmptyState() {
-  return <p className="mt-2 text-sm text-neutral-500">Not found</p>;
+  return <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Not found</p>;
+}
+
+function statusTone(status: string) {
+  if (status === "ready") {
+    return "success" as const;
+  }
+  if (status === "failed") {
+    return "danger" as const;
+  }
+  if (status === "analyzing" || status === "processing") {
+    return "warning" as const;
+  }
+  return "neutral" as const;
 }
 
 function TextValue({ value }: { value: string | null }) {
   return value ? (
-    <p className="mt-2 text-sm leading-6 text-neutral-700">{value}</p>
+    <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">{value}</p>
   ) : (
     <EmptyState />
   );
@@ -28,7 +48,7 @@ function TextValue({ value }: { value: string | null }) {
 
 function ListValue({ values }: { values: string[] }) {
   return values.length > 0 ? (
-    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-neutral-700">
+    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300">
       {values.map((value) => (
         <li key={value}>{value}</li>
       ))}
@@ -111,8 +131,8 @@ function SkillCategories({ analysis }: { analysis: ResumeAnalysis }) {
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       {entries.map(([label, values]) => (
         <div key={label}>
-          <p className="text-sm font-medium text-neutral-700">{label}</p>
-          <p className="mt-1 text-sm leading-6 text-neutral-600">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
             {uniqueValues(values).join(", ")}
           </p>
         </div>
@@ -138,20 +158,20 @@ function ProjectValue({ values }: { values: ResumeAnalysis["projects"] }) {
       {values.map((project) => (
         <article
           key={project.name}
-          className="rounded-md border border-neutral-200 p-4"
+          className="rounded-2xl border border-slate-200/75 bg-blue-50/35 p-4 dark:border-slate-700/60 dark:bg-slate-950/25"
         >
-          <p className="text-sm font-semibold text-neutral-950">
+          <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
             {project.name}
           </p>
           {project.description.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-neutral-700">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300">
               {project.description.map((description) => (
                 <li key={description}>{description}</li>
               ))}
             </ul>
           ) : null}
           {project.technologies.length > 0 ? (
-            <p className="mt-3 text-sm text-neutral-500">
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               Technologies: {project.technologies.join(", ")}
             </p>
           ) : null}
@@ -178,20 +198,20 @@ function ExperienceValue({ values }: { values: ResumeAnalysis["experience"] }) {
       {values.map((experience) => (
         <article
           key={`${experience.organization}-${experience.role}`}
-          className="rounded-md border border-neutral-200 p-4"
+          className="rounded-2xl border border-slate-200/75 bg-blue-50/35 p-4 dark:border-slate-700/60 dark:bg-slate-950/25"
         >
-          <p className="text-sm font-semibold text-neutral-950">
+          <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
             {[experience.role, experience.organization].filter(Boolean).join(" - ") ||
               experience.organization ||
               "Experience"}
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {experience.experience_type.replace("_", " ")}
             {experience.start_date ? ` | ${experience.start_date}` : ""}
             {experience.end_date ? ` - ${experience.end_date}` : ""}
           </p>
           {experience.description.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-neutral-700">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300">
               {experience.description.map((description) => (
                 <li key={description}>{description}</li>
               ))}
@@ -211,8 +231,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-t border-neutral-200 pt-4">
-      <h3 className="text-sm font-semibold text-neutral-950">{title}</h3>
+    <div className="border-t border-slate-200/70 pt-4 dark:border-slate-800">
+      <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-50">{title}</h3>
       {children}
     </div>
   );
@@ -258,48 +278,51 @@ export function ResumeAnalysisPanel({ resume }: ResumeAnalysisPanelProps) {
   };
 
   return (
-    <div className="mt-5 rounded-md border border-neutral-200 bg-white p-4">
+    <Card className="mt-5 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-neutral-700">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Structured Resume Analysis
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Status: {resume.analysis_status}
-          </p>
+          <div className="mt-2">
+            <Badge tone={statusTone(resume.analysis_status)}>
+              {resume.analysis_status}
+            </Badge>
+          </div>
         </div>
         {canAnalyze ? (
-          <button
-            type="button"
+          <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
           >
             {isAnalyzing ? "Analyzing..." : "Analyze Resume"}
-          </button>
+          </Button>
         ) : null}
       </div>
 
       {message ? (
-        <p
-          className={
+        <Alert
+          className="mt-3"
+          tone={
             message.includes("failed") || message.includes("unavailable")
-              ? "mt-3 text-sm text-red-600"
-              : "mt-3 text-sm text-green-700"
+              ? "danger"
+              : "success"
           }
         >
           {message}
-        </p>
+        </Alert>
       ) : null}
 
       {resume.analysis_status === "failed" ? (
-        <p className="mt-3 text-sm text-red-600">Resume analysis failed.</p>
+        <Alert className="mt-3" tone="danger">
+          Resume analysis failed.
+        </Alert>
       ) : null}
 
       {analysis ? (
         <div className="mt-5 space-y-4">
           <Section title="Contact information">
-            <div className="mt-2 grid gap-2 text-sm text-neutral-700 sm:grid-cols-3">
+            <div className="mt-2 grid gap-2 text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-3">
               <p>Name: {analysis.candidate_name ?? "Not found"}</p>
               <p>Email: {analysis.email ?? "Not found"}</p>
               <p>Phone: {analysis.phone ?? "Not found"}</p>
@@ -324,7 +347,13 @@ export function ResumeAnalysisPanel({ resume }: ResumeAnalysisPanelProps) {
             <ListValue values={analysis.certifications} />
           </Section>
         </div>
+      ) : canAnalyze ? (
+        <EmptyPanel
+          className="mt-5"
+          title="Analysis not generated yet"
+          description="Run deterministic resume analysis to structure your skills, projects, education, and experience."
+        />
       ) : null}
-    </div>
+    </Card>
   );
 }

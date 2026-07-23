@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui";
+
 type ProfileCompletionCardProps = {
   percentage: number;
 };
@@ -19,22 +21,22 @@ export function ProfileCompletionCard({ percentage }: ProfileCompletionCardProps
   const normalized = Math.max(0, Math.min(100, Math.round(percentage)));
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6">
+    <Card className="p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-neutral-500">
+          <p className="text-sm font-medium text-blue-700 dark:text-cyan-300">
             Profile completion
           </p>
-          <p className="mt-2 text-sm text-neutral-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             {completionMessage(normalized)}
           </p>
         </div>
-        <p className="text-2xl font-semibold text-neutral-950">
+        <p className="text-2xl font-semibold text-slate-950 dark:text-slate-50">
           {normalized}%
         </p>
       </div>
       <div
-        className="mt-5 h-2 rounded-full bg-neutral-100"
+        className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
         role="progressbar"
         aria-label="Profile completion"
         aria-valuenow={normalized}
@@ -42,10 +44,10 @@ export function ProfileCompletionCard({ percentage }: ProfileCompletionCardProps
         aria-valuemax={100}
       >
         <div
-          className="h-2 rounded-full bg-neutral-950"
+          className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-fuchsia-500 transition-all"
           style={{ width: `${normalized}%` }}
         />
       </div>
-    </section>
+    </Card>
   );
 }

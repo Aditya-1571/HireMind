@@ -28,8 +28,8 @@ export default async function InterviewPage({ params }: InterviewPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 md:flex">
-      <Sidebar />
+    <div className="hiremind-ambient min-h-screen md:flex">
+      <Sidebar user={user} />
       <PageContainer className="py-8">
         <InterviewSession initialInterview={interview} />
       </PageContainer>

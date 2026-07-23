@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import type { InterviewReport } from "@/lib/api";
+import { Button, Card, LinkButton } from "@/components/ui";
 
 type InterviewReportActionsProps = {
   report: InterviewReport;
@@ -48,46 +48,32 @@ export function InterviewReportActions({ report }: InterviewReportActionsProps) 
   };
 
   return (
-    <section className="print-hidden rounded-lg border border-neutral-200 bg-white p-4">
+    <Card className="print-hidden p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-neutral-700">Report actions</p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Report actions</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Suggested filename: {suggestedFilename}
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             For Save as PDF, choose Save as PDF in the destination options.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/interviews/history"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-          >
+          <LinkButton href="/interviews/history">
             Back to History
-          </Link>
-          <Link
-            href={practiceAgainHref(report)}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-          >
+          </LinkButton>
+          <LinkButton href={practiceAgainHref(report)}>
             Practice Again
-          </Link>
-          <button
-            type="button"
-            onClick={printReport}
-            className="rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
+          </LinkButton>
+          <Button onClick={printReport}>
             Print Report
-          </button>
-          <button
-            type="button"
-            onClick={printReport}
-            className="rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
+          </Button>
+          <Button onClick={printReport}>
             Save as PDF
-          </button>
+          </Button>
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
