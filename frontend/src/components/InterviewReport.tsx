@@ -1,20 +1,32 @@
+import dynamic from "next/dynamic";
 import type { InterviewReport as InterviewReportType } from "@/lib/api";
-import { InterviewReportActions } from "@/components/InterviewReportActions";
-import { Badge, Card, EmptyState } from "@/components/ui";
+import { Badge, Card, EmptyState, Skeleton } from "@/components/ui";
 
 type InterviewReportProps = {
   report: InterviewReportType;
 };
+
+const InterviewReportActions = dynamic(
+  () =>
+    import("@/components/InterviewReportActions").then(
+      (module) => module.InterviewReportActions,
+    ),
+  {
+    loading: () => <Skeleton className="print-hidden h-28" />,
+  },
+);
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 function formatDate(value: string | null) {
   if (!value) {
     return "Not available";
   }
 
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTimeFormatter.format(new Date(value));
 }
 
 function formatDuration(seconds: number | null) {

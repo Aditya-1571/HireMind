@@ -16,6 +16,11 @@ import {
   Card,
   EmptyState as EmptyPanel,
 } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 type ResumeAnalysisPanelProps = {
   resume: Resume;
@@ -250,19 +255,12 @@ export function ResumeAnalysisPanel({ resume }: ResumeAnalysisPanelProps) {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/resumes/${resume.id}/analysis`, {
+      const response = await fetchWithTimeout(`/api/resumes/${resume.id}/analysis`, {
         method: "POST",
-      });
+      }, 45000);
 
       if (!response.ok) {
-        const error = (await response.json().catch(() => ({}))) as {
-          message?: unknown;
-        };
-        setMessage(
-          typeof error.message === "string"
-            ? error.message
-            : "Resume analysis failed.",
-        );
+        setMessage(await responseErrorMessage(response, "Resume analysis failed."));
         setIsAnalyzing(false);
         router.refresh();
         return;
@@ -271,7 +269,7 @@ export function ResumeAnalysisPanel({ resume }: ResumeAnalysisPanelProps) {
       setMessage("Resume analysis is ready.");
       router.refresh();
     } catch {
-      setMessage("Resume analysis is unavailable.");
+      setMessage(networkErrorMessage("Resume analysis is unavailable."));
     } finally {
       setIsAnalyzing(false);
     }
@@ -294,8 +292,9 @@ export function ResumeAnalysisPanel({ resume }: ResumeAnalysisPanelProps) {
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
+            loading={isAnalyzing}
           >
-            {isAnalyzing ? "Analyzing..." : "Analyze Resume"}
+            {isAnalyzing ? "Analyzing resume" : "Analyze Resume"}
           </Button>
         ) : null}
       </div>

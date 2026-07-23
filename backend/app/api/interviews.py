@@ -42,6 +42,8 @@ class CreateInterviewRequest(BaseModel):
     evaluation_style: Literal["beginner_friendly", "balanced", "strict"] = "balanced"
     answer_mode: Literal["text"] = "text"
 
+    model_config = {"extra": "forbid"}
+
     @field_validator("question_count", mode="before")
     @classmethod
     def reject_non_integer_question_count(cls, value: object) -> object:
@@ -54,7 +56,9 @@ class CreateInterviewRequest(BaseModel):
 
 class SubmitAnswerRequest(BaseModel):
     question_id: UUID
-    answer: str
+    answer: str = Field(min_length=1, max_length=10_000)
+
+    model_config = {"extra": "forbid"}
 
 
 class InterviewQuestionResponse(BaseModel):

@@ -12,7 +12,10 @@ export function Header() {
         >
           <HireMindLogo size="sm" />
         </Link>
-        <nav className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <nav
+          aria-label="Landing page navigation"
+          className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+        >
           <Link
             href="/dashboard"
             className="rounded-xl px-3 py-2 font-medium hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:hover:bg-slate-800/70 dark:hover:text-cyan-200 dark:focus-visible:ring-cyan-300 dark:focus-visible:ring-offset-slate-950"

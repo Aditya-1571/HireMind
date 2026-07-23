@@ -1,10 +1,29 @@
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { PageContainer } from "@/components/PageContainer";
 import { Sidebar } from "@/components/Sidebar";
-import { StartInterviewForm } from "@/components/StartInterviewForm";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Skeleton } from "@/components/ui";
 import { getProfile, getResumes } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/auth";
+
+const StartInterviewForm = dynamic(
+  () =>
+    import("@/components/StartInterviewForm").then(
+      (module) => module.StartInterviewForm,
+    ),
+  {
+    loading: () => (
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
+        <div className="space-y-6">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-80" />
+          <Skeleton className="h-52" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    ),
+  },
+);
 
 type StartInterviewPageProps = {
   searchParams?: Promise<{

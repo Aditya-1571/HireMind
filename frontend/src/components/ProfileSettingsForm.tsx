@@ -13,6 +13,7 @@ import {
   Badge,
   Button,
   Card,
+  Toast,
   fieldClassName,
 } from "@/components/ui";
 
@@ -183,6 +184,7 @@ export function ProfileSettingsForm({
               id="full_name"
               value={form.full_name}
               maxLength={100}
+              autoComplete="name"
               onChange={(event) => updateField("full_name", event.target.value)}
               placeholder="Your professional name"
               aria-describedby={
@@ -207,6 +209,7 @@ export function ProfileSettingsForm({
               id="professional_headline"
               value={form.professional_headline}
               maxLength={150}
+              autoComplete="organization-title"
               onChange={(event) =>
                 updateField("professional_headline", event.target.value)
               }
@@ -286,6 +289,7 @@ export function ProfileSettingsForm({
               id="bio"
               value={form.bio}
               maxLength={500}
+              autoComplete="off"
               rows={6}
               onChange={(event) => updateField("bio", event.target.value)}
               placeholder="Briefly describe your background, interests, and goals."
@@ -311,7 +315,7 @@ export function ProfileSettingsForm({
         </Alert>
       ) : null}
       {error ? <Alert tone="danger">{error}</Alert> : null}
-      {success ? <Alert tone="success">{success}</Alert> : null}
+      {success ? <Toast tone="success">{success}</Toast> : null}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
@@ -321,8 +325,8 @@ export function ProfileSettingsForm({
         >
           Reset changes
         </Button>
-        <Button onClick={save} disabled={!canSave}>
-          {isSaving ? "Saving..." : "Save profile"}
+        <Button onClick={save} disabled={!canSave} loading={isSaving}>
+          {isSaving ? "Saving profile" : "Save profile"}
         </Button>
       </div>
     </div>

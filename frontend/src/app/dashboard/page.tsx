@@ -1,10 +1,8 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
-import { OllamaStatusPanel } from "@/components/OllamaStatusPanel";
 import { PageContainer } from "@/components/PageContainer";
 import { PerformanceTrendChart } from "@/components/PerformanceTrendChart";
-import { ResumeAnalysisPanel } from "@/components/ResumeAnalysisPanel";
-import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 import { Sidebar } from "@/components/Sidebar";
 import {
   Badge,
@@ -12,6 +10,7 @@ import {
   EmptyState,
   LinkButton,
   PageHeader,
+  Skeleton,
   StatCard,
 } from "@/components/ui";
 import {
@@ -28,6 +27,41 @@ const statusLabels: Record<string, string> = {
   ready: "Ready",
   failed: "Failed",
 };
+
+const OllamaStatusPanel = dynamic(
+  () =>
+    import("@/components/OllamaStatusPanel").then(
+      (module) => module.OllamaStatusPanel,
+    ),
+  {
+    loading: () => <Skeleton className="mt-6 h-40" />,
+  },
+);
+
+const ResumeUploadForm = dynamic(
+  () =>
+    import("@/components/ResumeUploadForm").then(
+      (module) => module.ResumeUploadForm,
+    ),
+  {
+    loading: () => <Skeleton className="mt-5 h-32" />,
+  },
+);
+
+const ResumeAnalysisPanel = dynamic(
+  () =>
+    import("@/components/ResumeAnalysisPanel").then(
+      (module) => module.ResumeAnalysisPanel,
+    ),
+  {
+    loading: () => <Skeleton className="mt-5 h-48" />,
+  },
+);
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 function getResumeStatusLabel(status?: string) {
   if (!status) {
@@ -46,10 +80,7 @@ function formatDate(value: string | null) {
     return "In progress";
   }
 
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTimeFormatter.format(new Date(value));
 }
 
 export default async function DashboardPage() {

@@ -4,8 +4,40 @@ import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, fieldClassName } from "@/components/ui";
+import {
+  fetchWithTimeout,
+  networkErrorMessage,
+  responseErrorMessage,
+} from "@/lib/errors";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
+
+const maxResumeBytes = 5 * 1024 * 1024;
+const allowedExtensions = [".pdf", ".docx", ".txt"];
+const allowedTypes = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+];
+
+function validateResumeFile(file: File) {
+  const filename = file.name.toLowerCase();
+  const hasAllowedExtension = allowedExtensions.some((extension) =>
+    filename.endsWith(extension),
+  );
+  const hasAllowedType = !file.type || allowedTypes.includes(file.type);
+
+  if (file.size === 0) {
+    return "The selected file is empty. Upload a readable PDF, DOCX, or TXT resume.";
+  }
+  if (file.size > maxResumeBytes) {
+    return "Resume must be 5 MB or smaller.";
+  }
+  if (!hasAllowedExtension || !hasAllowedType) {
+    return "Upload a PDF, DOCX, or TXT resume.";
+  }
+  return null;
+}
 
 export function ResumeUploadForm() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,6 +55,13 @@ export function ResumeUploadForm() {
       return;
     }
 
+    const validationError = validateResumeFile(file);
+    if (validationError) {
+      setState("error");
+      setMessage(validationError);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -30,21 +69,14 @@ export function ResumeUploadForm() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/resumes", {
+      const response = await fetchWithTimeout("/api/resumes", {
         method: "POST",
         body: formData,
-      });
+      }, 60000);
 
       if (!response.ok) {
-        const error = (await response.json().catch(() => ({}))) as {
-          message?: unknown;
-        };
         setState("error");
-        setMessage(
-          typeof error.message === "string"
-            ? error.message
-            : "Resume upload failed.",
-        );
+        setMessage(await responseErrorMessage(response, "Resume upload failed."));
         router.refresh();
         return;
       }
@@ -57,7 +89,7 @@ export function ResumeUploadForm() {
       router.refresh();
     } catch {
       setState("error");
-      setMessage("Resume upload is unavailable.");
+      setMessage(networkErrorMessage("Resume upload is unavailable."));
     }
   };
 
@@ -87,8 +119,9 @@ export function ResumeUploadForm() {
         <Button
           type="submit"
           disabled={state === "uploading"}
+          loading={state === "uploading"}
         >
-          {state === "uploading" ? "Uploading..." : "Upload resume"}
+          {state === "uploading" ? "Uploading resume" : "Upload resume"}
         </Button>
         <p className="text-sm text-slate-500 dark:text-slate-400">Maximum file size: 5 MB.</p>
       </div>

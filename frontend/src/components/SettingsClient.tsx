@@ -1,10 +1,9 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AccountInformationCard } from "@/components/AccountInformationCard";
-import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
-import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
+import dynamic from "next/dynamic";
 import type { ProfileResponse } from "@/lib/api";
+import { Skeleton } from "@/components/ui";
 
 type SettingsTab = "profile" | "account" | "appearance";
 
@@ -38,6 +37,36 @@ function normalizeTab(value: string | null): SettingsTab {
   return value === "account" || value === "appearance" ? value : "profile";
 }
 
+const ProfileSettingsForm = dynamic(
+  () =>
+    import("@/components/ProfileSettingsForm").then(
+      (module) => module.ProfileSettingsForm,
+    ),
+  {
+    loading: () => <Skeleton className="h-[32rem]" />,
+  },
+);
+
+const AccountInformationCard = dynamic(
+  () =>
+    import("@/components/AccountInformationCard").then(
+      (module) => module.AccountInformationCard,
+    ),
+  {
+    loading: () => <Skeleton className="h-96" />,
+  },
+);
+
+const AppearanceSettingsPanel = dynamic(
+  () =>
+    import("@/components/AppearanceSettingsPanel").then(
+      (module) => module.AppearanceSettingsPanel,
+    ),
+  {
+    loading: () => <Skeleton className="h-72" />,
+  },
+);
+
 export function SettingsClient({ profile }: SettingsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -55,11 +84,18 @@ export function SettingsClient({ profile }: SettingsClientProps) {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
+  const selectRelativeTab = (current: SettingsTab, direction: 1 | -1) => {
+    const currentIndex = tabs.findIndex((tab) => tab.id === current);
+    const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+    setTab(tabs[nextIndex].id);
+  };
+
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
       <aside className="lg:sticky lg:top-8 lg:self-start">
         <nav
           aria-label="Settings sections"
+          role="tablist"
           className="grid gap-2 rounded-2xl border border-slate-200/75 bg-white/72 p-2 shadow-sm shadow-blue-950/[0.04] backdrop-blur-xl dark:border-slate-700/55 dark:bg-slate-900/58"
         >
           {tabs.map((tab) => {
@@ -68,8 +104,20 @@ export function SettingsClient({ profile }: SettingsClientProps) {
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
                 onClick={() => setTab(tab.id)}
-                aria-current={selected ? "page" : undefined}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+                    event.preventDefault();
+                    selectRelativeTab(tab.id, 1);
+                  }
+                  if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    selectRelativeTab(tab.id, -1);
+                  }
+                }}
+                aria-selected={selected}
+                aria-controls="settings-panel"
                 className={
                   selected
                     ? "rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-500 px-4 py-3 text-left text-white shadow-sm shadow-blue-950/20"
@@ -92,7 +140,7 @@ export function SettingsClient({ profile }: SettingsClientProps) {
         </nav>
       </aside>
 
-      <section>
+      <section id="settings-panel" role="tabpanel" tabIndex={-1}>
         {activeTab === "profile" ? (
           <ProfileSettingsForm initialProfile={profile} />
         ) : null}

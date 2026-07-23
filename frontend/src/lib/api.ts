@@ -1,3 +1,11 @@
+import {
+  messageFromStatus,
+  networkErrorMessage,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
+import { getBackendApiUrl } from "@/lib/serverConfig";
+
 export type HealthResponse = {
   status: "ok";
   service: "hiremind-api";
@@ -12,7 +20,7 @@ export type BackendHealthStatus =
       connected: false;
     };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const apiUrl = getBackendApiUrl();
 
 export type Resume = {
   id: string;
@@ -335,9 +343,9 @@ export async function getBackendHealth(): Promise<BackendHealthStatus> {
       return { connected: false };
     }
 
-    const data = (await response.json()) as Partial<HealthResponse>;
+    const data = await readJsonSafely<Partial<HealthResponse>>(response);
 
-    if (data.status !== "ok" || data.service !== "hiremind-api") {
+    if (!data || data.status !== "ok" || data.service !== "hiremind-api") {
       return { connected: false };
     }
 
@@ -370,7 +378,10 @@ export async function getResumes(token?: string): Promise<Resume[]> {
       return [];
     }
 
-    const data = (await response.json()) as Partial<ResumeListResponse>;
+    const data = await readJsonSafely<Partial<ResumeListResponse>>(response);
+    if (!data) {
+      return [];
+    }
     return Array.isArray(data.resumes) ? data.resumes : [];
   } catch {
     return [];
@@ -396,7 +407,7 @@ export async function getProfile(
       return null;
     }
 
-    return (await response.json()) as ProfileResponse;
+    return await readJsonSafely<ProfileResponse>(response);
   } catch {
     return null;
   }
@@ -416,31 +427,34 @@ export async function updateProfile(
     });
 
     if (!response.ok) {
-      const error = (await response.json().catch(() => ({}))) as {
-        message?: unknown;
-        detail?: unknown;
-      };
       return {
         ok: false,
         status: response.status,
-        message:
-          typeof error.message === "string"
-            ? error.message
-            : typeof error.detail === "string"
-              ? error.detail
-              : "Unable to save profile settings.",
+        message: await responseErrorMessage(
+          response,
+          "Unable to save profile settings.",
+        ),
+      };
+    }
+
+    const profile = await readJsonSafely<ProfileResponse>(response);
+    if (!profile) {
+      return {
+        ok: false,
+        status: 502,
+        message: "Profile service returned an invalid response.",
       };
     }
 
     return {
       ok: true,
-      profile: (await response.json()) as ProfileResponse,
+      profile,
     };
   } catch {
     return {
       ok: false,
       status: 503,
-      message: "Profile service unavailable.",
+      message: networkErrorMessage("Profile service unavailable."),
     };
   }
 }
@@ -487,7 +501,10 @@ export async function getInterviewSummaries(
       return empty;
     }
 
-    const data = (await response.json()) as Partial<InterviewListResponse>;
+    const data = await readJsonSafely<Partial<InterviewListResponse>>(response);
+    if (!data) {
+      return empty;
+    }
     return {
       interviews: Array.isArray(data.interviews) ? data.interviews : [],
       page: typeof data.page === "number" ? data.page : empty.page,
@@ -520,7 +537,7 @@ export async function getInterviewAnalyticsSummary(
       return null;
     }
 
-    return (await response.json()) as InterviewAnalyticsSummary;
+    return await readJsonSafely<InterviewAnalyticsSummary>(response);
   } catch {
     return null;
   }
@@ -546,7 +563,7 @@ export async function getInterview(
       return null;
     }
 
-    return (await response.json()) as Interview;
+    return await readJsonSafely<Interview>(response);
   } catch {
     return null;
   }
@@ -572,31 +589,34 @@ export async function getInterviewReport(
     );
 
     if (!response.ok) {
-      const error = (await response.json().catch(() => ({}))) as {
-        detail?: unknown;
-        message?: unknown;
-      };
       return {
         ok: false,
         status: response.status,
-        message:
-          typeof error.detail === "string"
-            ? error.detail
-            : typeof error.message === "string"
-              ? error.message
-              : "Unable to load interview report.",
+        message: await responseErrorMessage(
+          response,
+          "Unable to load interview report.",
+        ),
+      };
+    }
+
+    const report = await readJsonSafely<InterviewReport>(response);
+    if (!report) {
+      return {
+        ok: false,
+        status: 502,
+        message: "Interview report service returned an invalid response.",
       };
     }
 
     return {
       ok: true,
-      report: (await response.json()) as InterviewReport,
+      report,
     };
   } catch {
     return {
       ok: false,
       status: 503,
-      message: "Interview report service unavailable.",
+      message: networkErrorMessage("Interview report service unavailable."),
     };
   }
 }
@@ -606,7 +626,24 @@ export async function getAiHealth(): Promise<AiHealth> {
     const response = await fetch(`${apiUrl}/api/ai/health`, {
       cache: "no-store",
     });
-    const data = (await response.json()) as Partial<AiHealth>;
+    if (!response.ok) {
+      return {
+        status: messageFromStatus(response.status, "unavailable"),
+        ollama_reachable: false,
+        model: "unknown",
+        model_available: false,
+      };
+    }
+
+    const data = await readJsonSafely<Partial<AiHealth>>(response);
+    if (!data) {
+      return {
+        status: "unavailable",
+        ollama_reachable: false,
+        model: "unknown",
+        model_available: false,
+      };
+    }
 
     return {
       status: typeof data.status === "string" ? data.status : "unavailable",

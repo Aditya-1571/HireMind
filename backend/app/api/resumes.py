@@ -1,4 +1,5 @@
 from typing import Annotated
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -24,6 +25,11 @@ SUPPORTED_CONTENT_TYPES = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
+}
+SUPPORTED_EXTENSIONS = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".txt": "text/plain",
 }
 
 
@@ -57,22 +63,51 @@ async def upload_resume(
             detail="Resume file is required",
         )
 
+    safe_filename = Path(file.filename or "resume").name
+    extension = Path(safe_filename).suffix.lower()
+
     if file.content_type not in SUPPORTED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="Upload a PDF, DOCX, or TXT resume",
         )
 
+    if SUPPORTED_EXTENSIONS.get(extension) != file.content_type:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="File extension must match PDF, DOCX, or TXT content",
+        )
+
     content = await file.read(MAX_RESUME_BYTES + 1)
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Resume file is empty",
+        )
     if len(content) > MAX_RESUME_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Resume must be 5 MB or smaller",
         )
 
+    if file.content_type == "application/pdf" and not content.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The uploaded PDF appears to be invalid or corrupted",
+        )
+    if (
+        file.content_type
+        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        and not content.startswith(b"PK")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The uploaded DOCX appears to be invalid or corrupted",
+        )
+
     resume = Resume(
         user_id=current_user.id,
-        original_filename=file.filename or "resume",
+        original_filename=safe_filename,
         file_type=file.content_type,
         processing_status="uploaded",
         analysis_status="pending",

@@ -185,8 +185,25 @@ export function Alert({
   };
 
   return (
-    <div className={`rounded-md border p-4 text-sm ${styles[tone]} ${className}`}>
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      className={`rounded-md border p-4 text-sm ${styles[tone]} ${className}`}
+    >
       {children}
+    </div>
+  );
+}
+
+export function Toast({
+  children,
+  tone = "info",
+  className = "",
+}: BaseProps & { tone?: "success" | "warning" | "danger" | "info" }) {
+  return (
+    <div className="fixed bottom-5 right-5 z-50 max-w-sm px-4">
+      <Alert tone={tone} className={`shadow-lg shadow-slate-950/10 dark:shadow-black/30 ${className}`}>
+        {children}
+      </Alert>
     </div>
   );
 }
@@ -243,6 +260,7 @@ export function StatCard({
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
+      aria-hidden="true"
       className={`animate-pulse rounded-2xl bg-slate-200/75 dark:bg-slate-800/65 ${className}`}
     />
   );

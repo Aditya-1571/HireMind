@@ -1,24 +1,18 @@
 import { NextResponse } from "next/server";
 import { getSessionToken } from "@/lib/auth";
+import {
+  forwardJsonResponse,
+  getErrorMessage,
+  readRequestJson,
+  type ErrorResponse,
+} from "@/lib/routeErrors";
+import { getBackendApiUrl } from "@/lib/serverConfig";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const apiUrl = getBackendApiUrl();
 
 type RouteContext = {
   params: Promise<{ interviewId: string }>;
 };
-
-type ErrorResponse = {
-  detail?: unknown;
-  message?: unknown;
-};
-
-function getErrorMessage(error: ErrorResponse, fallback: string) {
-  return typeof error.detail === "string"
-    ? error.detail
-    : typeof error.message === "string"
-      ? error.message
-      : fallback;
-}
 
 export async function POST(request: Request, context: RouteContext) {
   const token = await getSessionToken();
@@ -30,7 +24,10 @@ export async function POST(request: Request, context: RouteContext) {
   const { interviewId } = await context.params;
 
   try {
-    const body = await request.json();
+    const parsed = await readRequestJson(request);
+    if (!parsed.ok) {
+      return parsed.response;
+    }
     const response = await fetch(
       `${apiUrl}/api/interviews/${interviewId}/answers`,
       {
@@ -39,7 +36,7 @@ export async function POST(request: Request, context: RouteContext) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(parsed.body),
         cache: "no-store",
       },
     );
@@ -52,7 +49,7 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    return NextResponse.json(await response.json());
+    return forwardJsonResponse(response);
   } catch {
     return NextResponse.json(
       { message: "Interview service unavailable" },

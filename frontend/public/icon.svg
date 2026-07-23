@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HireMind">
+  <defs>
+    <linearGradient id="g" x1="64" y1="64" x2="448" y2="448">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="0.45" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="#050816"/>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#g)"/>
+  <path d="M120 368V144h80v80h112v-80h80v224h-80v-80H200v80h-80Z" fill="#F8FAFC"/>
+  <path d="M200 368V248l56 56 56-56v120h-56v-40l-56-56v96h-56Z" fill="#EEF2FF"/>
+</svg>

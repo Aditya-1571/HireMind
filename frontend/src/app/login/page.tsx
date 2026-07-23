@@ -11,7 +11,11 @@ const benefits = [
 
 export default function LoginPage() {
   return (
-    <main className="hiremind-ambient min-h-screen overflow-hidden bg-[#070B1D] px-4 py-6 text-slate-50 sm:px-6 lg:px-8">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="hiremind-ambient min-h-screen overflow-hidden bg-[#070B1D] px-4 py-6 text-slate-50 sm:px-6 lg:px-8"
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between">
         <Link href="/" className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
           <HireMindLogo subtitle />

@@ -6,7 +6,7 @@ import jwt
 from fastapi import Depends, Header, HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,7 +16,9 @@ from app.models import User
 
 
 class GoogleLoginRequest(BaseModel):
-    credential: str
+    credential: str = Field(min_length=10, max_length=4096)
+
+    model_config = {"extra": "forbid"}
 
 
 class UserResponse(BaseModel):

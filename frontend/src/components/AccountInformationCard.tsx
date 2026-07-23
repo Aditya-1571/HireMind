@@ -4,17 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AccountInformation, ProfileInformation } from "@/lib/api";
 import { Alert, Badge, Button, Card, LinkButton } from "@/components/ui";
+import { fetchWithTimeout, responseErrorMessage } from "@/lib/errors";
 
 type AccountInformationCardProps = {
   account: AccountInformation;
   profile: ProfileInformation;
 };
 
+const dateTimeFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTimeFormatter.format(new Date(value));
 }
 
 function initials(name: string | null, email: string) {
@@ -50,11 +53,11 @@ export function AccountInformationCard({
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/logout", {
+      const response = await fetchWithTimeout("/api/auth/logout", {
         method: "POST",
-      });
+      }, 15000);
       if (!response.ok) {
-        setError("Unable to sign out.");
+        setError(await responseErrorMessage(response, "Unable to sign out."));
         setIsSigningOut(false);
         return;
       }
@@ -136,8 +139,9 @@ export function AccountInformationCard({
             onClick={signOut}
             disabled={isSigningOut}
             variant="danger"
+            loading={isSigningOut}
           >
-            {isSigningOut ? "Signing out..." : "Sign out"}
+            {isSigningOut ? "Signing out" : "Sign out"}
           </Button>
           {error ? (
             <Alert className="mt-4" tone="danger">
