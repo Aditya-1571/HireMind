@@ -16,3 +16,27 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Application-generated files
+backend/uploads/
+backend/chroma_db/
+
+frontend-src-backup/

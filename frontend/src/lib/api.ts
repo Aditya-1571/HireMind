@@ -1,0 +1,662 @@
+import {
+  messageFromStatus,
+  networkErrorMessage,
+  readJsonSafely,
+  responseErrorMessage,
+} from "@/lib/errors";
+import { getBackendApiUrl } from "@/lib/serverConfig";
+
+export type HealthResponse = {
+  status: "ok";
+  service: "hiremind-api";
+};
+
+export type BackendHealthStatus =
+  | {
+      connected: true;
+      data: HealthResponse;
+    }
+  | {
+      connected: false;
+    };
+
+const apiUrl = getBackendApiUrl();
+
+export type Resume = {
+  id: string;
+  original_filename: string;
+  file_type: string;
+  extracted_text: string | null;
+  processing_status: "uploaded" | "processing" | "ready" | "failed" | string;
+  analysis_status: "pending" | "analyzing" | "ready" | "failed" | string;
+  analysis_data: ResumeAnalysis | null;
+};
+
+export type ResumeAnalysis = {
+  metadata?: {
+    analysis_version?: string;
+    generated_at?: string;
+    parser_type?: string;
+  };
+  candidate_name: string | null;
+  email: string | null;
+  phone: string | null;
+  summary: string | null;
+  skills: string[] | ResumeSkillCategories;
+  skills_categorized?: ResumeSkillCategories;
+  programming_languages: string[];
+  ml_ai?: string[];
+  frameworks_and_libraries: string[];
+  tools_and_platforms: string[];
+  databases?: string[];
+  cloud_devops?: string[];
+  education: string[];
+  experience: string[] | ResumeExperience[];
+  projects: string[] | ResumeProject[];
+  certifications: string[];
+  achievements?: string[];
+};
+
+export type ResumeSkillCategories = {
+  programming_languages?: string[];
+  ml_ai?: string[];
+  frameworks_libraries?: string[];
+  tools_platforms?: string[];
+  databases?: string[];
+  cloud_devops?: string[];
+  other?: string[];
+};
+
+export type ResumeProject = {
+  name: string;
+  description: string[];
+  technologies: string[];
+};
+
+export type ResumeExperience = {
+  organization: string;
+  role: string;
+  start_date: string | null;
+  end_date: string | null;
+  location: string | null;
+  description: string[];
+  experience_type: "job" | "internship" | "virtual_internship" | "simulation" | string;
+};
+
+export type ResumeListResponse = {
+  resumes: Resume[];
+};
+
+export type InterviewQuestion = {
+  id: string;
+  question_text: string;
+  user_answer: string | null;
+  feedback: string | null;
+  score: number | null;
+  sequence_number: number;
+};
+
+export type QuestionEvaluation = {
+  sequence_number: number;
+  score: number;
+  feedback: string;
+  strength: string;
+  improvement: string;
+};
+
+export type Interview = {
+  id: string;
+  interview_type: string;
+  difficulty: string;
+  target_role: string;
+  status: "in_progress" | "completed" | string;
+  started_at: string | null;
+  completed_at: string | null;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+  duration_seconds: number | null;
+  answered_count: number;
+  total_questions: number;
+  questions: InterviewQuestion[];
+  overall_score: number | null;
+  overall_feedback: string | null;
+  strengths: string[];
+  improvements: string[];
+  question_evaluations: QuestionEvaluation[];
+};
+
+export type InterviewSummary = {
+  id: string;
+  target_role: string;
+  interview_type: string;
+  difficulty: string;
+  status: "in_progress" | "completed" | string;
+  overall_score: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+  duration_seconds: number | null;
+  resume_filename: string | null;
+  answered_count: number;
+  total_questions: number;
+};
+
+export type CreatedInterview = Interview & {
+  generation_source: "ai" | "fallback";
+};
+
+export type CompletedInterview = Interview & {
+  evaluation_source: "ai" | "fallback";
+};
+
+export type InterviewReportQuestion = {
+  sequence_number: number;
+  question_text: string;
+  candidate_answer: string | null;
+  score: number | null;
+  feedback: string | null;
+  strength: string | null;
+  improvement: string | null;
+};
+
+export type InterviewReport = {
+  interview: {
+    id: string;
+    target_role: string;
+    interview_type: string;
+    difficulty: string;
+    evaluation_style: string;
+    answer_mode: string;
+    question_count: number;
+    answered_count: number;
+    started_at: string | null;
+    completed_at: string | null;
+    duration_seconds: number | null;
+    time_limit_minutes: number | null;
+  };
+  summary: {
+    overall_score: number | null;
+    performance_level: string | null;
+    overall_feedback: string | null;
+    strengths: string[];
+    improvements: string[];
+  };
+  metrics: {
+    average_question_score: number | null;
+    completion_rate: number | null;
+    answered_questions: number;
+    total_questions: number;
+  };
+  questions: InterviewReportQuestion[];
+  recommendations: {
+    topics: string[];
+    next_interview: {
+      target_role: string;
+      difficulty: string;
+      interview_type: string;
+      question_count: number;
+      focus_topics: string[];
+    };
+  };
+};
+
+export type InterviewReportResult =
+  | {
+      ok: true;
+      report: InterviewReport;
+    }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+    };
+
+export type InterviewListResponse = {
+  interviews: InterviewSummary[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+};
+
+export type InterviewListParams = {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  interview_type?: string;
+  difficulty?: string;
+  target_role?: string;
+  sort?: string;
+};
+
+export type ScoreTrendItem = {
+  interview_id: string;
+  date: string;
+  target_role: string;
+  interview_type: string;
+  score: number;
+};
+
+export type ScoreByTypeItem = {
+  interview_type: string;
+  average_score: number;
+  count: number;
+};
+
+export type InterviewAnalyticsSummary = {
+  total_interviews: number;
+  completed_interviews: number;
+  in_progress_interviews: number;
+  average_completed_score: number | null;
+  highest_score: number | null;
+  latest_completed_score: number | null;
+  most_practised_target_role: string | null;
+  score_trend: ScoreTrendItem[];
+  average_score_by_type: ScoreByTypeItem[];
+};
+
+export type AiHealth = {
+  status: "ok" | "unavailable" | string;
+  ollama_reachable: boolean;
+  model: string;
+  model_available: boolean;
+};
+
+export type AiGeneration = {
+  model: string;
+  generated_text: string;
+};
+
+export type ExperienceLevel =
+  | "student"
+  | "fresher"
+  | "junior"
+  | "mid_level"
+  | "senior";
+
+export type ProfileInformation = {
+  full_name: string | null;
+  professional_headline: string | null;
+  target_role: string | null;
+  experience_level: ExperienceLevel | null;
+  bio: string | null;
+};
+
+export type InterviewDefaults = {
+  interview_type: "HR" | "Technical" | "Mixed" | string;
+  difficulty: "Easy" | "Medium" | "Hard" | string;
+  question_count: number;
+  time_limit_minutes: number | null;
+  evaluation_style: "beginner_friendly" | "balanced" | "strict" | string;
+  answer_mode: "text" | string;
+};
+
+export type AccountInformation = {
+  email: string;
+  auth_provider: string;
+  created_at: string;
+  profile_picture_url: string | null;
+};
+
+export type ProfileResponse = {
+  profile: ProfileInformation;
+  interview_defaults: InterviewDefaults;
+  account: AccountInformation;
+  profile_completion: number;
+};
+
+export type ProfileUpdatePayload = {
+  profile?: Partial<ProfileInformation>;
+  interview_defaults?: Partial<{
+    interview_type: "HR" | "Technical" | "Mixed";
+    difficulty: "Easy" | "Medium" | "Hard";
+    question_count: number;
+    time_limit_minutes: number | null;
+    evaluation_style: "beginner_friendly" | "balanced" | "strict";
+    answer_mode: "text";
+  }>;
+};
+
+export type ProfileUpdateResult =
+  | {
+      ok: true;
+      profile: ProfileResponse;
+    }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+    };
+
+export async function getBackendHealth(): Promise<BackendHealthStatus> {
+  try {
+    const response = await fetch(`${apiUrl}/api/health`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return { connected: false };
+    }
+
+    const data = await readJsonSafely<Partial<HealthResponse>>(response);
+
+    if (!data || data.status !== "ok" || data.service !== "hiremind-api") {
+      return { connected: false };
+    }
+
+    return {
+      connected: true,
+      data: {
+        status: data.status,
+        service: data.service,
+      },
+    };
+  } catch {
+    return { connected: false };
+  }
+}
+
+export async function getResumes(token?: string): Promise<Resume[]> {
+  if (!token) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/resumes`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await readJsonSafely<Partial<ResumeListResponse>>(response);
+    if (!data) {
+      return [];
+    }
+    return Array.isArray(data.resumes) ? data.resumes : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getProfile(
+  token?: string,
+): Promise<ProfileResponse | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await readJsonSafely<ProfileResponse>(response);
+  } catch {
+    return null;
+  }
+}
+
+export async function updateProfile(
+  payload: ProfileUpdatePayload,
+): Promise<ProfileUpdateResult> {
+  try {
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        message: await responseErrorMessage(
+          response,
+          "Unable to save profile settings.",
+        ),
+      };
+    }
+
+    const profile = await readJsonSafely<ProfileResponse>(response);
+    if (!profile) {
+      return {
+        ok: false,
+        status: 502,
+        message: "Profile service returned an invalid response.",
+      };
+    }
+
+    return {
+      ok: true,
+      profile,
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      message: networkErrorMessage("Profile service unavailable."),
+    };
+  }
+}
+
+function buildInterviewSearch(params?: InterviewListParams) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== undefined && value !== null && String(value).trim()) {
+      search.set(key, String(value));
+    }
+  }
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function getInterviewSummaries(
+  token?: string,
+  params?: InterviewListParams,
+): Promise<InterviewListResponse> {
+  const empty = {
+    interviews: [],
+    page: params?.page ?? 1,
+    page_size: params?.page_size ?? 10,
+    total: 0,
+    total_pages: 0,
+  };
+
+  if (!token) {
+    return empty;
+  }
+
+  try {
+    const response = await fetch(
+      `${apiUrl}/api/interviews${buildInterviewSearch(params)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return empty;
+    }
+
+    const data = await readJsonSafely<Partial<InterviewListResponse>>(response);
+    if (!data) {
+      return empty;
+    }
+    return {
+      interviews: Array.isArray(data.interviews) ? data.interviews : [],
+      page: typeof data.page === "number" ? data.page : empty.page,
+      page_size:
+        typeof data.page_size === "number" ? data.page_size : empty.page_size,
+      total: typeof data.total === "number" ? data.total : 0,
+      total_pages: typeof data.total_pages === "number" ? data.total_pages : 0,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export async function getInterviewAnalyticsSummary(
+  token?: string,
+): Promise<InterviewAnalyticsSummary | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/interviews/analytics/summary`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await readJsonSafely<InterviewAnalyticsSummary>(response);
+  } catch {
+    return null;
+  }
+}
+
+export async function getInterview(
+  token: string | undefined,
+  interviewId: string,
+): Promise<Interview | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/interviews/${interviewId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await readJsonSafely<Interview>(response);
+  } catch {
+    return null;
+  }
+}
+
+export async function getInterviewReport(
+  token: string | undefined,
+  interviewId: string,
+): Promise<InterviewReportResult> {
+  if (!token) {
+    return { ok: false, status: 401, message: "Unauthorized" };
+  }
+
+  try {
+    const response = await fetch(
+      `${apiUrl}/api/interviews/${interviewId}/report`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        message: await responseErrorMessage(
+          response,
+          "Unable to load interview report.",
+        ),
+      };
+    }
+
+    const report = await readJsonSafely<InterviewReport>(response);
+    if (!report) {
+      return {
+        ok: false,
+        status: 502,
+        message: "Interview report service returned an invalid response.",
+      };
+    }
+
+    return {
+      ok: true,
+      report,
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      message: networkErrorMessage("Interview report service unavailable."),
+    };
+  }
+}
+
+export async function getAiHealth(): Promise<AiHealth> {
+  try {
+    const response = await fetch(`${apiUrl}/api/ai/health`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return {
+        status: messageFromStatus(response.status, "unavailable"),
+        ollama_reachable: false,
+        model: "unknown",
+        model_available: false,
+      };
+    }
+
+    const data = await readJsonSafely<Partial<AiHealth>>(response);
+    if (!data) {
+      return {
+        status: "unavailable",
+        ollama_reachable: false,
+        model: "unknown",
+        model_available: false,
+      };
+    }
+
+    return {
+      status: typeof data.status === "string" ? data.status : "unavailable",
+      ollama_reachable: data.ollama_reachable === true,
+      model: typeof data.model === "string" ? data.model : "unknown",
+      model_available: data.model_available === true,
+    };
+  } catch {
+    return {
+      status: "unavailable",
+      ollama_reachable: false,
+      model: "unknown",
+      model_available: false,
+    };
+  }
+}
